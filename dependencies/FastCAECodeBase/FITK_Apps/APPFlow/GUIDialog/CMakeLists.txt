@@ -1,3 +1,0 @@
-add_subdirectory(GUICalculateDialog)
-add_subdirectory(GUIGeometryDialog)
-add_subdirectory(GUIMeshDialog)

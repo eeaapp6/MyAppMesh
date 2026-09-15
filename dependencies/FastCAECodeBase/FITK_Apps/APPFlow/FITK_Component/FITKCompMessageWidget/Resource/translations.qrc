@@ -1,6 +1,0 @@
-<RCC>
-    <qresource prefix="/">
-        <file>translations/Translate_FITKCompMessageWidget_CN.qm</file>
-        <file>translations/Translate_FITKCompMessageWidget_EN.qm</file>
-    </qresource>
-</RCC>

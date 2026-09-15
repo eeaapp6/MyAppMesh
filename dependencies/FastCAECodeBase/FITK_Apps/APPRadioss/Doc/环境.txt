@@ -1,6 +1,0 @@
-Qt5.14.2
-Visual Studio 2017
-CMake 3.16 >= 3.16
-
-备注：CopyLibs.bat拷贝库时，注意QT和Tools的路径。如果与视频不符请修改文件5、6行。
-   

@@ -1,5 +1,0 @@
-<RCC>
-    <qresource prefix="/">
-        <file>PythonCode/clear.py</file>
-    </qresource>
-</RCC>
