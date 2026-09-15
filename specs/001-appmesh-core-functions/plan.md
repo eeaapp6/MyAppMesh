@@ -10,34 +10,60 @@ APPMesh will be rebuilt as a FastCAE/FITK desktop application while preserving t
 
 ## Technical Context
 
-**Language/Version**: C++17 minimum; exact compiler baseline follows the FastCAE/FITK build. Qt5 and Python 3.x bridge are supplied by the platform.
+**Language/Version**: C++17 (`CMAKE_CXX_STANDARD 17`) with MSVC 14.16/v141 from Visual Studio 2017 on Windows x64. All application and dependency binaries must use the same MSVC runtime and build configuration.
 
-**Primary Dependencies**: FastCAE/FITK application, global-data, component, plugin, operator, thread-pool, geometry/mesh/IO abstractions; VTK; SARibbon; HDF5; optional Gmsh, TetGen and FastCAE Grid drivers.
+**Build System**: CMake 3.16 or newer with the `Visual Studio 15 2017` x64 generator. New APPMesh code does not add qmake project files; existing FastCAE `.pro/.pri` files remain reference material only. Configure the dependency root explicitly as `dependencies/FastCAECodeBase/Tools`.
 
-**Storage**: HDF5 project container; plugin namespaces for plugin-owned data; versioned application configuration and recent-file metadata.
+**Primary Dependencies**: Qt 5.14.2 `msvc2017_64` (Core, Gui, Widgets, plus Network/Svg where required); the repository-pinned FastCAE/FITK sources and interfaces; Open CASCADE 7.4.0 beta through `FITKGeoCompOCC`; VTK 9.4.2 through `FITKRenderWindowVTK`; SARibbon 2.0.1 for the desktop ribbon; Gmsh 4.5.4 through `FITKGmshExeDriver` as the first-release mesh engine; HDF5 1.14.0; CGNS 4.2.0. Qwt 6.2.0 is available but remains optional until a two-dimensional plotting requirement is scheduled.
+
+**Automation Dependencies**: The FastCAE Python bridge is pinned to Python 3.7.0 and the bundled Qt5/Python 3.7 PythonQt libraries. Python, HTTP (`Qt Network`/Sogou Workflow) and AI integrations are extension-phase dependencies and may not become prerequisites of the geometry-to-mesh core path. The separately bundled Python 3.14 runtime is not used by FITKPython in this release.
+
+**Storage and File Exchange**: HDF5 1.14.0 project container with plugin-owned namespaces; OCC readers for BRep/STEP/STP/IGES/IGS; CGNS 4.2.0 where the existing component applies; Gmsh MSH v2 as the primary generated mesh interchange, with MSH v4 treated as partial until verified. FITKMesh and INP remain specification commitments requiring APPMesh adapters because this FastCAE source snapshot has no ready first-release component covering both contracts.
 
 **Testing**: CTest-driven C++ unit tests, plugin and extension contract tests, FastCAE/VTK integration tests, fixture-based HDF5 compatibility tests, and deployment smoke tests.
 
-**Target Platform**: Qt desktop on the supported Windows build environment; optional headless/HTTP startup only when enabled by deployment.
+**Target Platform**: Windows x64 desktop. The compatibility baseline is Visual Studio 2017/v141, Qt 5.14.2 `msvc2017_64`, and the matching Debug/Release libraries under `Tools/Win64`. The FastCAE scripts request Windows SDK 10.0.17763.0; the 2026-09-15 host check did not find a Windows 10 SDK installation, so SDK installation is a build-environment prerequisite rather than a resolved dependency.
 
 **Project Type**: Desktop CAE application with dynamically loaded plugins and optional automation services.
 
-**Performance Goals**: UI remains interactive during geometry import, mesh generation, project open/save and large-file IO; progress/state is observable; unchanged data does not cause repeated display-object rebuilds. Exact large-model thresholds remain a product acceptance decision.
+**Performance Goals**: UI remains interactive during geometry import, mesh generation, project open/save and large-file IO. Each acceptance test uses a 100 ms UI-thread `QTimer`, collects at least 50 consecutive callbacks while the worker is active, and passes only when the maximum adjacent callback interval is no greater than 500 ms; it must also observe `running` and exactly one terminal task state. Unchanged data does not cause repeated display-object rebuilds. Exact large-model size and throughput thresholds remain a product acceptance decision.
 
 **Constraints**: No original APPMesh source dependency; dependencies respect the four layers; UI objects are main-thread-only; failed operations preserve last known-good data; current version does not promise stable Python/HTTP schemas or public error codes and does not provide task cancellation.
 
-**Scale/Scope**: One desktop process, multiple geometry/mesh objects, at least one deployed and usable mesh-generator plugin for first-release acceptance, HDF5 projects, and the geometry-to-mesh-save workflow. Other generators depend on plugin and deployment availability. Physics fields, solver orchestration and complete post-processing remain outside current scope.
+**Scale/Scope**: One desktop process, multiple geometry/mesh objects, one deployed Gmsh generator for first-release acceptance, HDF5 projects, and the geometry-to-mesh-save workflow. TetGen, FastCAE Grid and other generators remain future plugins until matching source, binaries and contract tests are supplied. Physics fields, solver orchestration and complete post-processing remain outside current scope.
+
+## Verified Toolchain Baseline
+
+The following inventory was verified against `dependencies/FastCAECodeBase/Tools`, FastCAE CMake files and executable/header version output on 2026-09-15.
+
+| Area | Pinned selection | Repository/host evidence | Status |
+|---|---|---|---|
+| Compiler ABI | Visual Studio 2017, MSVC 14.16.27023/v141, x64 | FastCAE build scripts and installed VS2017 toolset | Ready |
+| Windows SDK | 10.0.17763.0 compatibility target | FastCAE build scripts | Blocked: SDK not installed on host |
+| Build | CMake minimum 3.16 | FastCAE module `CMakeLists.txt` files | Ready; avoid relying on host CMake 4.1.0-rc1-only behavior |
+| Qt | Qt 5.14.2 `msvc2017_64` | Local `qmake -query QT_VERSION` and FastCAE scripts | Ready |
+| FastCAE/FITK | Repository-pinned sources and matching shared-library layout | `FITK_Kernel`, `FITK_Interface`, `FITK_Component` | Ready to configure after SDK installation |
+| Geometry | Open CASCADE 7.4.0 beta | `OCC/include/Standard_Version.hxx`; release/debug libraries present | Ready |
+| 3D rendering | VTK 9.4.2 | `VTK942` CMake version file; release/debug DLLs present | Ready |
+| Mesh generation | Gmsh 4.5.4 and `FITKGmshExeDriver` 2.0.0 | Bundled executable plus existing FITK driver source | Ready; first-release engine |
+| Persistence | HDF5 1.14.0 | `H5public.h`; release/debug libraries present | Ready |
+| Mesh exchange | CGNS 4.2.0 | `cgnslib.h`; release/debug libraries present | Ready where FITKCGNSIO contract applies |
+| Desktop ribbon | SARibbon 2.0.1 | Headers and release/debug libraries present | Ready |
+| Embedded scripting | Python 3.7.0 plus PythonQt for Qt5/Python 3.7 | Executable, headers and release/debug libraries present | Ready for extension phase |
+| Optional plotting | Qwt 6.2.0 | Headers and release/debug libraries present | Available, not core scope |
+
+Release binaries/libraries come from `bin`/`lib`, while Debug binaries/libraries come from `bind`/`libd`, as defined by the bundled CMake configuration. A configuration must never mix the two sets.
 
 ## Constitution Check
 
 *GATE: PASS before and after design.*
 
 - **FastCAE/FITK Foundation**: PASS. Lifecycle, factories, global data, components, plugins, operators, thread pool, VTK and IO are reused through published interfaces.
-- **Four-Layer Architecture**: PASS. Dependencies flow from FastCAE base to components to APPMesh extensions to business/UI; business modules do not call concrete external engines directly.
-- **Plugin-Based Extensibility**: PASS. Generators, IO extensions and optional capabilities use descriptors, lifecycle, capability registration, dependency checks and failure isolation.
-- **Responsive and Asynchronous Execution**: PASS. Required long-running operations are asynchronous and expose progress/completion/failure; the amended constitution makes user cancellation optional and deferred for this release.
-- **Traceability and Data Safety**: PASS. Design areas map to requirements and tests; failed operations report errors without intentionally clearing valid in-memory data.
-- **No source reuse**: PASS. Only requirements, design documentation and FastCAE/FITK public contracts are inputs.
+- **Layered, Explicit Architecture**: PASS. Dependencies flow from FastCAE base to components to APPMesh extensions to business/UI; business modules do not call concrete external engines directly.
+- **Minimal Runnable Increments**: PASS. The implementation strategy starts with a buildable Phase 1-4 path and verifies each phase before extension.
+- **Reproducible Builds and Tests**: PASS. CMake, CTest, fixture-based integration tests and deployment checks are part of the plan; commands and expected results belong in quickstart.md.
+- **Traceable Specification**: PASS. Design areas map to requirements and tasks; failed operations report errors without intentionally clearing valid in-memory data.
+- **Architecture constraints and no source reuse**: PASS. Only requirements, design documentation and FastCAE/FITK public contracts are inputs, and original APPMesh source is excluded.
 
 ## Project Structure
 
@@ -174,8 +200,8 @@ Use `ErrorInfo { category, code, message, detail, recoverable, taskId, objectId,
 1. Unit-test ID/name invariants, mesh topology/set validation, concrete parameter validation, task state behavior and error reporting.
 2. Contract-test plugin discovery, API compatibility, capability registration, install rollback, unload cleanup and generator result validation.
 3. Contract-test HDF5 context creation, Version type/version checks, plugin read/write dispatch and failure reporting.
-4. Integration-test initialization order, FastCAE factories, VTK/GraphData synchronization, operator routing and UI-thread responsiveness.
-5. Driver-test Gmsh, TetGen and FastCAE Grid with fake executables plus real smoke fixtures where deployed; cover missing executable, non-zero exit, malformed output and large output streams.
+4. Integration-test initialization order, FastCAE factories, VTK/GraphData synchronization, operator routing and UI-thread responsiveness. The responsiveness fixture keeps each target worker active for at least 5 seconds, runs a 100 ms `QTimer` on the UI thread, records at least 50 consecutive callbacks, fails when any adjacent callback interval exceeds 500 ms, and verifies one observed `running` state followed by exactly one terminal state.
+5. Driver-test the first-release Gmsh path with a fake executable plus the bundled Gmsh 4.5.4 smoke fixture; cover missing executable, non-zero exit, malformed output and large output streams. Reuse the same contract suite when a future TetGen or FastCAE Grid plugin is actually supplied.
 6. Extension-test Python and HTTP success/failure dispatch through operators, permission checks and non-serializable results; do not assert an uncommitted stable schema.
 7. End-to-end test geometry-import -> mesh-generate -> display -> export -> HDF5-save and controlled shutdown/failure preservation.
 8. Performance/deployment tests measure startup, memory, import/IO/generation responsiveness and fixture sizes; exact large-model acceptance thresholds are a product follow-up.
@@ -187,7 +213,7 @@ Use `ErrorInfo { category, code, message, detail, recoverable, taskId, objectId,
 - Use FastCAE VTK windows, view adapters, generic widgets, console and file-dialog infrastructure; `GUIFrame`, `GUIWidget` and `GUIDialog` supply APPMesh-specific composition and validation.
 - Use FastCAE HDF5/IO primitives and let currently loaded plugins own their project data read/write behavior.
 - Use FastCAE Python bridge and registration mechanisms; route calls to APPMesh operators rather than exposing mutable internals.
-- Package Qt, VTK, SARibbon, FastCAE libraries, plugins, external generators and resources in separate Debug/Release runtime directories.
+- Package Qt 5.14.2, VTK 9.4.2, OCC 7.4.0 beta, SARibbon 2.0.1, HDF5 1.14.0, CGNS 4.2.0, the matching FastCAE libraries, plugins, Gmsh 4.5.4 and resources in separate Debug/Release runtime directories.
 
 ## Complexity Tracking
 
@@ -199,7 +225,7 @@ Additional intentional scope decisions are no stable Python/HTTP public contract
 
 ## Frozen Scope and Traceability Amendment
 
-The first-release geometry formats are BRep, STEP/STP, and IGES/IGS. Mesh import is FITKMesh; mesh export is FITKMesh, CGNS, and INP. Generator parameters follow concrete generator implementations. There is no unified user cancellation; task behavior follows the FastCAE task and driver interfaces. Project restore is best effort for matching project type/version and loaded plugins; unknown plugin payloads are not required to be preserved. Python and HTTP remain controlled internal entry points without a stable versioned schema or public error-code contract.
+The first-release geometry formats are BRep, STEP/STP, and IGES/IGS. Mesh import is FITKMesh; mesh export is FITKMesh, CGNS, and INP. Gmsh 4.5.4 through `FITKGmshExeDriver` is the first-release mesh generator; other engines require a later compatible plugin. Generator parameters follow concrete generator implementations. There is no unified user cancellation; task behavior follows the FastCAE task and driver interfaces. Project restore is best effort for matching project type/version and loaded plugins; unknown plugin payloads are not required to be preserved. Python and HTTP remain controlled internal entry points without a stable versioned schema or public error-code contract.
 
 Canonical startup order is: `FITKApplication` and command-line mode; `SystemChecker` and settings; `GlobalDataFactory` and `ModelData`; `ComponentFactory` and core components; Python registration; `MainWindowGenerator` with `GUIFrame`/`GUIWidget`/`GUIDialog` and `GraphData`; compatible plugin discovery/load; `AppInitializer` finalization and operator registration; command-line/workbench dispatch; Qt event loop. Shutdown is the reverse dependency order after in-flight work finishes.
 
@@ -214,20 +240,20 @@ FastCAE mapping required by implementation and tests: `FITKGlobalData` -> `Globa
 | FR-005 | ModelData/GUI | T005,T006,T011 | AT-03,AT-05 |
 | FR-006 | GeometryIO/operators | T015,T016,T017 | AT-03 |
 | FR-007 | MeshData/MeshManager | T005,T007,T008,T009 | AT-04 |
-| FR-008 | plugins/generator operators | T018,T020,T022 | AT-04,AT-06 |
+| FR-008 | plugins/generator operators | T018,T020,T022,T042 | AT-04,AT-06 |
 | FR-009 | operators/task service | T014,T019 | AT-04,AT-11 |
 | FR-010 | result validation | T007,T019 | AT-04 |
 | FR-011 | GUI/GraphData | T010,T011,T026,T027 | AT-05 |
 | FR-012 | FastCAE IO | T031 | AT-07 |
-| FR-013 | HDF5IO/plugins | T029,T030 | AT-08 |
+| FR-013 | HDF5IO/plugins | T029,T030,T042 | AT-08 |
 | FR-014 | HDF5IO/task service | T029,T031,T032 | AT-08,AT-11 |
 | FR-015 | task service/signals | T014,T019,T039 | AT-11 |
-| FR-016 | plugin manager | T022,T023,T024,T025 | AT-06 |
+| FR-016 | plugin manager | T022,T023,T024,T025,T042 | AT-06 |
 | FR-017 | PythonInterface | T033,T036 | AT-09 |
 | FR-018 | HTTP adapter | T034,T036 | AT-09 |
 | FR-019 | AI boundary | T035,T036 | AT-10 |
 | FR-020 | diagnostics/ErrorInfo | T009,T019,T032,T040 | AT-11 |
-| FR-021 | traceability/testing | T040,T043 | AT-11,AT-12 |
+| FR-021 | traceability/testing | T040,T043,T041,T042 | AT-11,AT-12,AT-02,AT-08 |
 | FR-022 | build/deployment | T001,T038,T043 | AT-12 |
 
 

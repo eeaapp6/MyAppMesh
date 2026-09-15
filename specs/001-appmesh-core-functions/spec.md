@@ -36,11 +36,11 @@
 
 ### User Story 2 - 工程恢复与文件交换 (Priority: P1)
 
-用户打开已有工程，恢复几何、网格、插件数据和显示状态，导入或导出网格文件，并将修改后的工程保存为可再次打开的文件。
+用户打开已有工程，恢复项目类型和版本匹配时由已加载插件声明的数据，导入或导出网格文件，并将修改后的工程保存为可再次打开的文件。
 
 **Why this priority**: 可恢复、可交换的工程数据是持续工作的基础。
 
-**Independent Test**: 保存一个包含几何、网格和插件元数据的工程，重新打开并核对对象、关联、显示状态和版本信息。
+**Independent Test**: 保存一个包含插件声明数据的工程，重新打开并核对项目类型、版本信息、插件读写结果及兼容性诊断；不把未声明的统一几何、网格关联或显示状态恢复作为首版前置条件。
 
 **Acceptance Scenarios**:
 
@@ -135,9 +135,9 @@
 
 ### Measurable Outcomes
 
-- **SC-001**: 在受支持环境中，应用能够完成源码对应的检查、注册、初始化并进入事件循环；启动失败提供 FastCAE 消息诊断。
-- **SC-002**: 几何导入、网格生成、工程打开/保存和大型文件 IO 的 100% 验收测试中，界面线程保持可交互，任务状态可观察。
-- **SC-003**: 源码中已有的网格生成插件能够按 FastCAE 插件机制注册和使用；新增生成器是否支持由具体插件和部署状态决定。
+- **SC-001**: 在 `quickstart.md` 列出的受支持 Windows/FastCAE 环境中，应用能够完成环境检查、组件注册、初始化并进入事件循环；任一启动失败均提供 FastCAE 消息诊断。
+- **SC-002**: 几何导入、网格生成、工程打开/保存和大型文件 IO 的每一项验收测试 MUST 在后台任务运行期间由 UI 线程上的 100 ms `QTimer` 记录至少 50 次连续心跳；任意相邻心跳回调间隔 MUST 不超过 500 ms，并且测试 MUST 至少观察到一次 `running` 状态和且仅一个完成或失败终态。测试夹具 MUST 保证后台任务可持续至少 5 秒，以获得足够样本。
+- **SC-003**: 部署配置中启用且满足 FastCAE 接口要求的网格生成插件能够完成发现、注册和一次可观察的使用；新增生成器是否支持由具体插件和部署状态决定。
 - **SC-004**: 100% 的失败和受控退出验收测试保留操作前的最后已知有效工程数据，且目标工程文件仍可打开。
 - **SC-005**: 在项目类型和版本匹配且相关插件已加载的前提下，保存并重新打开工程时，各插件声明并实现的工程数据应完成尽力恢复；统一恢复全部几何、网格、关联、运行信息、工作目录、显示状态及未知数据保留不属于当前版本验收范围。
 - **SC-006**: 100% 的核心用户场景可追踪到至少一条功能需求、一项设计决策、一个实现任务和一个自动化或手工验收测试。
@@ -173,19 +173,19 @@
 | FR-005 | ModelData、GUIWidget、Operators | T005、T006、T011 | AT-03、AT-05 |
 | FR-006 | GeometryIO、ImportGeometryOperator | T015、T016、T017 | AT-03 |
 | FR-007 | MeshManager、MeshData、MeshKernel | T005、T007、T008、T009 | AT-04 |
-| FR-008 | FITK_Plugins、Generator operators | T018、T020、T022 | AT-04、AT-06 |
+| FR-008 | FITK_Plugins、Generator operators | T018、T020、T022、T042 | AT-04、AT-06 |
 | FR-009 | OperatorsInterface、TaskService | T014、T019 | AT-04、AT-11 |
 | FR-010 | MeshGeneratorOperator、MeshManager | T007、T019 | AT-04 |
 | FR-011 | GUIFrame、GraphData | T010、T011、T026、T027 | AT-05 |
 | FR-012 | FastCAE IO、HDF5IO | T031 | AT-07 |
-| FR-013 | HDF5IO、FITK_Plugins | T029、T030 | AT-08 |
+| FR-013 | HDF5IO、FITK_Plugins | T029、T030、T042 | AT-08 |
 | FR-014 | HDF5IO、TaskService | T029、T031、T032 | AT-08、AT-11 |
 | FR-015 | TaskService、SignalProcessor | T014、T019、T039 | AT-11 |
-| FR-016 | FITK_Plugins、PluginManager | T022、T023、T024、T025 | AT-06 |
+| FR-016 | FITK_Plugins、PluginManager | T022、T023、T024、T025、T042 | AT-06 |
 | FR-017 | PythonInterface | T033、T036 | AT-09 |
 | FR-018 | PythonInterface、HTTP adapter | T034、T036 | AT-09 |
 | FR-019 | AI extension boundary | T035、T036 | AT-10 |
 | FR-020 | ErrorInfo、diagnostics | T009、T019、T032、T040 | AT-11 |
-| FR-021 | Traceability and test strategy | T040、T043 | AT-11、AT-12 |
+| FR-021 | Traceability and test strategy | T040、T043、T041、T042 | AT-02、AT-08、AT-11、AT-12 |
 | FR-022 | Build and deployment boundary | T001、T038、T043 | AT-12 |
 
