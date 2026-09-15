@@ -25,6 +25,11 @@ compile_commands.json
 *.code-workspace
 
 # Compiler and linker intermediates
+*.o
+*.a
+*.so
+*.exe
+*.dll
 *.obj
 *.ilk
 *.idb

@@ -5,8 +5,8 @@
 The first-release Windows x64 baseline is:
 
 - Visual Studio 2017 with the MSVC 14.16.27023/v141 x64 toolset.
-- Windows 10 SDK 10.0.17763.0, or a deliberately approved compatible SDK after a clean configure/build test. The 2026-09-15 host check found no Windows 10 SDK installation, so this is the remaining environment blocker.
-- CMake 3.16 or newer. Project files must not depend on behavior unique to the currently installed CMake 4.1.0-rc1.
+- Windows 10 SDK 10.0.17763.0. On the validated host it is installed under `C:\Windows Kits\10` and is selected successfully by the VS2017 environment script.
+- CMake 3.16 or newer. Project files must not depend on behavior unique to the currently installed CMake 4.1.0-rc3.
 - Qt 5.14.2 `msvc2017_64`. Set `QT_ROOT` to its installation directory; the example below falls back to the historical FastCAE location when the variable is absent.
 - FastCAE/FITK sources at `dependencies/FastCAECodeBase`.
 - The restored dependency lock at `dependencies/FastCAECodeBase/Tools`.
@@ -18,6 +18,9 @@ The Tools package has been checked for OCC 7.4.0 beta, VTK 9.4.2, HDF5 1.14.0, C
 Run these commands from the repository root in PowerShell:
 
 ```powershell
+$vcvars = 'C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat'
+cmd.exe /d /s /c ('call "' + $vcvars + '" x64 10.0.17763.0 && where cl && where rc')
+
 $repoRoot = (Resolve-Path '.').Path
 $toolsDir = Join-Path $repoRoot 'dependencies\FastCAECodeBase\Tools'
 $qtDir = if ($env:QT_ROOT) { $env:QT_ROOT } else { 'C:\Qt\Qt5.14.2\5.14.2\msvc2017_64' }
@@ -37,11 +40,14 @@ Test-Path "$qtDir\bin\qmake.exe"
 Expected results are six `True` values followed by Gmsh `4.5.4`, Python `3.7.0`, and Qt `5.14.2`. Also verify that a Windows SDK is installed before configuring:
 
 ```powershell
-$sdkIncludeRoot = Join-Path ${env:ProgramFiles(x86)} 'Windows Kits\10\Include'
-Get-ChildItem $sdkIncludeRoot -Directory
+$sdkCandidates = @(
+  (Join-Path ${env:ProgramFiles(x86)} 'Windows Kits\10\Include\10.0.17763.0'),
+  'C:\Windows Kits\10\Include\10.0.17763.0'
+)
+$sdkCandidates | Where-Object { Test-Path $_ }
 ```
 
-The command must list at least one SDK version. Prefer `10.0.17763.0` because that is the version used by the FastCAE build scripts.
+The environment command must resolve `cl.exe` and `rc.exe`, and the candidate check must print the installed `10.0.17763.0` include directory.
 
 ## Configure, build and test
 
@@ -56,6 +62,7 @@ $buildDir = Join-Path $repoRoot 'build\vs2017-x64'
 
 cmake -S $repoRoot -B $buildDir `
   -G "Visual Studio 15 2017" -A x64 `
+  "-DCMAKE_SYSTEM_VERSION=10.0.17763.0" `
   "-DTOOLS_DIR=$toolsDir" `
   "-DQt5_DIR=$qt5Dir"
 
@@ -63,9 +70,16 @@ cmake --build $buildDir --config Debug
 ctest --test-dir $buildDir -C Debug --output-on-failure
 ```
 
+For the pinned baseline, `scripts\build-vs2017.cmd` initializes that environment and performs the Debug and Release configure/build/test sequence in one command.
+The script prefers the stable CMake 3.30.5 bundled with the installed Qt toolchain; set `CMAKE_EXE` to another CMake >=3.16 executable when needed.
+
 Repeat with `Release` before packaging. Debug must load DLLs from the Tools `bind` directories and link libraries from `libd`; Release must use `bin` and `lib`. A mixed configuration is a failed validation even if the executable starts.
 
 Expected first-stage result: the APPMesh desktop executable starts, completes FastCAE environment/component checks, creates the SARibbon main window, VTK view, model tree and message console, and enters the Qt event loop without missing-DLL diagnostics.
+
+## T002 settings recovery check
+
+Run the `t002.settings` test in both Debug and Release. It verifies that a valid working directory is persisted and restored even when recent-file history contains missing, deleted, non-regular or duplicate paths. Invalid history entries are filtered, valid entries retain their order, Windows path comparison is case-insensitive, and the configured recent-file limit still applies. Unsupported schema versions, invalid working directories, invalid settings paths and actual read/write failures must continue to fail with structured diagnostics.
 
 ## UI responsiveness heartbeat
 

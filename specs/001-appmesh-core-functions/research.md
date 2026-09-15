@@ -48,11 +48,17 @@
 
 **Alternatives considered**: Free-form direct model access was rejected for safety and traceability.
 
+## Decision: Isolate the FastCAE registration ABI behind a lifecycle adapter
+
+**Rationale**: The public FastCAE contracts expose `FITKApplication::regGlobalDataFactory`, `FITKAbstractGlobalDataFactory::createData`, `FITKApplication::regComponentsFactory`, and `FITKComponentFactory::create`, but the repository currently contains no linkable FITKAppFramework binaries. T003 therefore owns creation order, dependency validation, duplicate rejection, reverse-order rollback, and diagnostic results behind `IFastCAERegistrationAdapter`. The concrete adapter that invokes the public FITK application entry points is installed by the T004 startup composition root, where the real `FITKApplication` lifetime exists.
+
+**Alternatives considered**: Compiling selected private FastCAE implementation files into APPMesh was rejected because it would duplicate framework ownership and create an incomplete, ABI-fragile subset. Pretending registration succeeded without a boundary was rejected because failures and ordering would not be testable.
+
 ## Resolved planning unknowns
 
 - Dependency package: `dependencies/FastCAECodeBase/Tools` is present and contains the required Win64 release/debug libraries and CMake dependency modules.
 - Build ABI: Visual Studio 2017/MSVC v141 x64 with Qt 5.14.2 `msvc2017_64`; C++17 at the APPMesh target level; CMake minimum 3.16.
-- Host build blocker: FastCAE scripts target Windows SDK 10.0.17763.0, but no Windows 10 SDK installation was found during the 2026-09-15 check. Install and verify the SDK before treating T001 as buildable.
+- Host build baseline: FastCAE scripts target Windows SDK 10.0.17763.0. T001 verified it under `C:\Windows Kits\10` through the required VS2017 `vcvarsall.bat` invocation and completed Debug/Release builds.
 - First-release generator: Gmsh 4.5.4. TetGen and FastCAE Grid are future plugin candidates, not current dependencies.
 - Runtime versions: OCC 7.4.0 beta, VTK 9.4.2, HDF5 1.14.0, CGNS 4.2.0, SARibbon 2.0.1, Python 3.7.0/PythonQt; Qwt 6.2.0 optional.
 - Current-release cancellation: not implemented; tasks complete or fail and controlled shutdown is supported.

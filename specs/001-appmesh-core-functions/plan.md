@@ -22,7 +22,7 @@ APPMesh will be rebuilt as a FastCAE/FITK desktop application while preserving t
 
 **Testing**: CTest-driven C++ unit tests, plugin and extension contract tests, FastCAE/VTK integration tests, fixture-based HDF5 compatibility tests, and deployment smoke tests.
 
-**Target Platform**: Windows x64 desktop. The compatibility baseline is Visual Studio 2017/v141, Qt 5.14.2 `msvc2017_64`, and the matching Debug/Release libraries under `Tools/Win64`. The FastCAE scripts request Windows SDK 10.0.17763.0; the 2026-09-15 host check did not find a Windows 10 SDK installation, so SDK installation is a build-environment prerequisite rather than a resolved dependency.
+**Target Platform**: Windows x64 desktop. The compatibility baseline is Visual Studio 2017/v141, Qt 5.14.2 `msvc2017_64`, and the matching Debug/Release libraries under `Tools/Win64`. The FastCAE scripts request Windows SDK 10.0.17763.0; T001 validated that SDK under `C:\Windows Kits\10` through `vcvarsall.bat`.
 
 **Project Type**: Desktop CAE application with dynamically loaded plugins and optional automation services.
 
@@ -39,10 +39,10 @@ The following inventory was verified against `dependencies/FastCAECodeBase/Tools
 | Area | Pinned selection | Repository/host evidence | Status |
 |---|---|---|---|
 | Compiler ABI | Visual Studio 2017, MSVC 14.16.27023/v141, x64 | FastCAE build scripts and installed VS2017 toolset | Ready |
-| Windows SDK | 10.0.17763.0 compatibility target | FastCAE build scripts | Blocked: SDK not installed on host |
-| Build | CMake minimum 3.16 | FastCAE module `CMakeLists.txt` files | Ready; avoid relying on host CMake 4.1.0-rc1-only behavior |
+| Windows SDK | 10.0.17763.0 compatibility target | FastCAE build scripts and T001 Debug/Release builds | Ready under `C:\Windows Kits\10` |
+| Build | CMake minimum 3.16 | FastCAE module `CMakeLists.txt` files | Ready; T001 uses stable CMake 3.30.5 and does not rely on host CMake 4.1.0-rc3-only behavior |
 | Qt | Qt 5.14.2 `msvc2017_64` | Local `qmake -query QT_VERSION` and FastCAE scripts | Ready |
-| FastCAE/FITK | Repository-pinned sources and matching shared-library layout | `FITK_Kernel`, `FITK_Interface`, `FITK_Component` | Ready to configure after SDK installation |
+| FastCAE/FITK | Repository-pinned sources and matching shared-library layout | `FITK_Kernel`, `FITK_Interface`, `FITK_Component` | Ready; T001 configure/build validation passed |
 | Geometry | Open CASCADE 7.4.0 beta | `OCC/include/Standard_Version.hxx`; release/debug libraries present | Ready |
 | 3D rendering | VTK 9.4.2 | `VTK942` CMake version file; release/debug DLLs present | Ready |
 | Mesh generation | Gmsh 4.5.4 and `FITKGmshExeDriver` 2.0.0 | Bundled executable plus existing FITK driver source | Ready; first-release engine |
@@ -193,11 +193,11 @@ Writes create an HDF5 context, write Version metadata, and invoke currently load
 
 ## Error Handling
 
-Use `ErrorInfo { category, code, message, detail, recoverable, taskId, objectId, path }`. Categories include configuration, environment, input, validation, component, plugin, external-process, IO, project-compatibility, resource and extension. Internal codes are for diagnostics within a build but are not a public Python/HTTP compatibility promise in this release. User-facing messages are concise; logs include timestamp, thread, module, task/object IDs and sanitized paths. Failed imports, generation, reads and writes leave existing valid data untouched.
+Use `ErrorInfo { category, code, message, detail, recoverable, taskId, objectId, path }`. Categories include configuration, environment, input, validation, component, plugin, external-process, IO, project-compatibility, resource and extension. Internal codes are for diagnostics within a build but are not a public Python/HTTP compatibility promise in this release. User-facing messages are concise; logs include timestamp, thread, module, task/object IDs and sanitized paths. Failed imports, generation, reads and writes leave existing valid data untouched. Recent files are non-critical history: invalid, non-regular, duplicate or deleted entries are filtered during load and save and must not prevent otherwise valid settings from being persisted or restored.
 
 ## Testing Strategy
 
-1. Unit-test ID/name invariants, mesh topology/set validation, concrete parameter validation, task state behavior and error reporting.
+1. Unit-test ID/name invariants, mesh topology/set validation, concrete parameter validation, task state behavior and error reporting. Settings tests cover saving and loading stale recent-file entries plus mixed valid, duplicate and stale history while preserving case-insensitive deduplication and the configured maximum count.
 2. Contract-test plugin discovery, API compatibility, capability registration, install rollback, unload cleanup and generator result validation.
 3. Contract-test HDF5 context creation, Version type/version checks, plugin read/write dispatch and failure reporting.
 4. Integration-test initialization order, FastCAE factories, VTK/GraphData synchronization, operator routing and UI-thread responsiveness. The responsiveness fixture keeps each target worker active for at least 5 seconds, runs a 100 ms `QTimer` on the UI thread, records at least 50 consecutive callbacks, fails when any adjacent callback interval exceeds 500 ms, and verifies one observed `running` state followed by exactly one terminal state.
