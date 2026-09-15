@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/">
+        <file>gmsh/Download.txt</file>
+        <file>gmsh/License.txt</file>
+    </qresource>
+</RCC>

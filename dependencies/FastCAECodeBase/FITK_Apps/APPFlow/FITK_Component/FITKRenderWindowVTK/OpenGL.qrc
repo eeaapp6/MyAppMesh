@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/">
+        <file>OpenGL/glew/glew32.dll</file>
+        <file>OpenGL/glew/glewinfo.exe</file>
+        <file>OpenGL/glew/visualinfo.exe</file>
+    </qresource>
+</RCC>

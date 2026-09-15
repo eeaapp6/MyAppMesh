@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/">
+        <file>cfd_para.hypara</file>
+    </qresource>
+</RCC>

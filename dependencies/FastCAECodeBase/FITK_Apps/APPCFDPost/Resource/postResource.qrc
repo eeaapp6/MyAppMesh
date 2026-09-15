@@ -1,0 +1,38 @@
+<RCC>
+    <qresource prefix="/">
+        <file>icons/counter.png</file>
+        <file>icons/fit.png</file>
+        <file>icons/open.png</file>
+        <file>icons/post.png</file>
+        <file>icons/xMinus.png</file>
+        <file>icons/xPlus.png</file>
+        <file>icons/yMinus.png</file>
+        <file>icons/yPlus.png</file>
+        <file>icons/zMinus.png</file>
+        <file>icons/zPlus.png</file>
+        <file>icons/cellValue.png</file>
+        <file>icons/face.png</file>
+        <file>icons/faceWithEdge.png</file>
+        <file>icons/nodeValue.png</file>
+        <file>icons/point.png</file>
+        <file>icons/wireFrame.png</file>
+        <file>icons/end.png</file>
+        <file>icons/first.png</file>
+        <file>icons/next.png</file>
+        <file>icons/previous.png</file>
+        <file>icons/run.png</file>
+        <file>icons/stop.png</file>
+        <file>icons/back.png</file>
+        <file>icons/front.png</file>
+        <file>icons/up.png</file>
+        <file>icons/solidColor.png</file>
+        <file>icons/saveImage.png</file>
+        <file>icons/slice.png</file>
+        <file>icons/clip.png</file>
+        <file>icons/isosurf.png</file>
+        <file>icons/streamline.png</file>
+        <file>icons/vector.png</file>
+        <file>icons/video.png</file>
+        <file>icons/deform.svg</file>
+    </qresource>
+</RCC>

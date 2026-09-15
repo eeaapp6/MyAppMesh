@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/">
+        <file>translations/Translate_FITKRenderWindowOCC_CN.qm</file>
+        <file>translations/Translate_FITKRenderWindowOCC_EN.qm</file>
+    </qresource>
+</RCC>

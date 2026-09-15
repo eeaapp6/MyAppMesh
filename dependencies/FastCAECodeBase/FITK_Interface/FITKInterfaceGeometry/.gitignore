@@ -1,0 +1,10 @@
+.vs
+*.bat
+*.sln
+.*stash
+*.vcxproj
+*.filters
+*.user
+/Makefile
+/Makefile.Debug
+/Makefile.Release

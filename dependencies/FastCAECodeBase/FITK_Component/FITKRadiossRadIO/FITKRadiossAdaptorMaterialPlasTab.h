@@ -1,0 +1,107 @@
+﻿/*
+Copyright (c) 2020-2026, Qingdao Digital Intelligent Ship & Ocean Technology Co., Ltd.
+All rights reserved.
+
+This file is part of FastCAE and is distributed under the terms of the
+BSD 3-Clause License. See the LICENSE file in the project root for details.
+*/
+
+/**********************************************************************
+ * @file   FITKRadiossAdaptorMaterialPlasTab.h
+ * @brief  塑性材料读取适配器
+ * @author zhangjingx (hiter25@outlook.com)
+ * @date   2025-07-11
+ *********************************************************************/
+#ifndef __FITKRADIOSSADAPTORMATERIALPLASTAB_H__
+#define __FITKRADIOSSADAPTORMATERIALPLASTAB_H__
+#include "FITKRadiossRadIOAPI.h"
+#include "FITKRadiossAbstractAdaptor.h"
+#include "FITK_Kernel/FITKAdaptor/FITKIOAdaptorFactory.h"
+
+namespace Radioss
+{
+    class FITKMaterialPlasTab;
+    /**
+     * @brief  塑性材料读取适配器
+     * @author zhangjingx (hiter25@outlook.com)
+     * @date   2025-07-11
+     */
+    class FITKRadiossRadIOAPI FITKRadiossAdaptorMaterialPlasTab : public FITKRadiossAbstractAdaptor
+    {
+    public:
+        explicit FITKRadiossAdaptorMaterialPlasTab() = default;
+        ~FITKRadiossAdaptorMaterialPlasTab() = default;
+        /**
+         * @brief    
+         * @return   QString
+         * @author   zhangjingx (hiter25@outlook.com)
+         * @date     2025-07-08
+         */
+        QString getAdaptorClass() override;
+        /**
+         * @brief    适配器读取
+         * @return   bool
+         * @author   zhangjingx (hiter25@outlook.com)
+         * @date     2025-07-08
+         */
+        bool adaptR() override;
+        /**
+         * @brief    适配器写出
+         * @return   bool
+         * @author   zhangjingx (hiter25@outlook.com)
+         * @date     2025-07-08
+         */
+        bool adaptW() override;
+    private:
+        /**
+         * @brief    读取材料数据
+         * @param[i] mat 
+         * @return   bool
+         * @author   zhangjingx (hiter25@outlook.com)
+         * @date     2025-07-09
+         */
+        bool readMaterial(FITKMaterialPlasTab* mat);
+        /**
+         * @brief    读取参数
+         * @param[i] text 
+         * @return   void
+         * @author   zhangjingx (hiter25@outlook.com)
+         * @date     2025-07-09
+         */
+        void readParam(const QStringList & lines);
+        /**
+         * @brief    分割参数
+         * @param[i] text 
+         * @param[i] par 
+         * @return   void
+         * @author   zhangjingx (hiter25@outlook.com)
+         * @date     2025-07-09
+         */
+        void splitParam(const QString & line, const QList<QPair<QString, double>>& par);
+        /**
+         * @brief    
+         * @param[i] mat 
+         * @return   void
+         * @author   zhangjingx (hiter25@outlook.com)
+         * @date     2025-07-09
+         */
+        void setMatData(FITKMaterialPlasTab* mat);
+
+    private:
+        /**
+         * @brief  材料参数名称及数值
+         * @author zhangjingx (hiter25@outlook.com)
+         * @date   2025-07-09
+         */
+        QHash<QString, double> _materialParam{};
+    };
+    /**
+     * @brief  注册适配器
+     * @author zhangjingx (hiter25@outlook.com)
+     * @date   2025-07-08
+     */
+    Register2FITKIOAdaptorFactory(rad, Radioss::FITKMaterialPlasTab, FITKRadiossAdaptorMaterialPlasTab);
+    RegRadiossRadAdaptor(/MAT/PLAS_TAB, FITKRadiossAdaptorMaterialPlasTab);
+    RegRadiossRadAdaptor(/MAT/LAW36, FITKRadiossAdaptorMaterialPlasTab,1);
+}
+#endif

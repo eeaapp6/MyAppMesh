@@ -1,0 +1,328 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Simple FastCAE HTTP Client</title>
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --card: #ffffff;
+      --text: #1f2933;
+      --muted: #61717f;
+      --line: #d5dee6;
+      --accent: #0b79d0;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .container {
+      max-width: 980px;
+      margin: 24px auto;
+      padding: 0 16px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: 22px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 110px 1fr;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    label {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    input, select, textarea, button {
+      font: inherit;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 12px;
+      width: 100%;
+    }
+
+    textarea {
+      min-height: 150px;
+      resize: vertical;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-top: 12px;
+    }
+
+    button {
+      width: auto;
+      min-width: 92px;
+      border: none;
+      background: var(--accent);
+      color: #fff;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .status {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>Simple FastCAE HTTP Client (HTML)</h1>
+      <div class="grid">
+        <label for="url">URL</label>
+        <input id="url" type="text" value="http://127.0.0.1:8890/">
+      </div>
+      <div class="grid">
+        <label for="method">Method</label>
+        <select id="method">
+          <option value="GET">GET</option>
+          <option value="POST">POST</option>
+        </select>
+      </div>
+      <div class="grid">
+        <label for="timeoutMs">Timeout(ms)</label>
+        <input id="timeoutMs" type="number" min="1000" step="1000" value="120000">
+      </div>
+      <div class="grid" style="grid-template-columns: 1fr;">
+        <label for="requestBody">Request Body</label>
+        <textarea id="requestBody" placeholder="POST body (plain text or JSON)"></textarea>
+      </div>
+      <div class="actions">
+        <button id="sendBtn" type="button">Send</button>
+        <div id="status" class="status">Ready</div>
+      </div>
+      <div class="hint">If body is not empty and method is GET, request will be sent as POST.</div>
+      <div class="hint">POST now sends plain text body to reduce OPTIONS preflight issues.</div>
+      <div class="hint">If browser still blocks cross-origin calls, serve this file via a local static server or configure CORS on the server.</div>
+    </div>
+
+    <div class="card">
+      <div class="grid" style="grid-template-columns: 1fr; margin-bottom: 0;">
+        <label for="response">Response</label>
+        <textarea id="response" readonly></textarea>
+      </div>
+    </div>
+  </div>
+
+    <!-- JS测试区域 -->
+    <div class="container">
+      <div class="card">
+        <button id="testJsBtn" type="button">测试JS</button>
+      </div>
+    </div>
+
+  <script>
+    const urlInput = document.getElementById("url");
+    const methodSelect = document.getElementById("method");
+    const requestBody = document.getElementById("requestBody");
+    const timeoutInput = document.getElementById("timeoutMs");
+    const responseBox = document.getElementById("response");
+    const statusText = document.getElementById("status");
+    const sendBtn = document.getElementById("sendBtn");
+
+    function formatHeaders(headers) {
+      const lines = [];
+      headers.forEach((value, key) => {
+        lines.push(key + ": " + value);
+      });
+      return lines.join("\n");
+    }
+
+    function buildResponseOutput(parts) {
+      let output = "";
+      output += "Status: " + parts.status + "\n";
+      output += "URL: " + parts.url + "\n";
+      output += "Elapsed: " + parts.elapsedMs + " ms\n\n";
+      output += "Response Headers:\n" + (parts.headersText || "(none)") + "\n\n";
+      output += "Response Body:\n" + (parts.bodyText || "(empty)");
+      return output;
+    }
+
+    function sendByXhr(rawUrl, method, body, timeoutMs) {
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open(method, rawUrl, true);
+        xhr.timeout = timeoutMs;
+        if (method === "POST") {
+          xhr.setRequestHeader("Content-Type", "text/plain;charset=UTF-8");
+        }
+
+        xhr.onload = () => {
+          resolve({
+            ok: xhr.status >= 200 && xhr.status < 300,
+            status: xhr.status,
+            statusText: xhr.statusText || "",
+            bodyText: xhr.responseText || "",
+            headersText: xhr.getAllResponseHeaders() || "",
+            finalUrl: xhr.responseURL || rawUrl
+          });
+        };
+
+        xhr.onerror = () => {
+          reject(new Error("XHR network error"));
+        };
+
+        xhr.ontimeout = () => {
+          const timeoutErr = new Error("XHR timeout");
+          timeoutErr.name = "TimeoutError";
+          reject(timeoutErr);
+        };
+
+        xhr.send(method === "POST" ? body : null);
+      });
+    }
+
+    function setUiEnabled(enabled) {
+      urlInput.disabled = !enabled;
+      methodSelect.disabled = !enabled;
+      requestBody.disabled = !enabled;
+      timeoutInput.disabled = !enabled;
+      sendBtn.disabled = !enabled;
+    }
+
+    async function sendRequest() {
+      const rawUrl = urlInput.value.trim();
+      if (!rawUrl) {
+        statusText.textContent = "Invalid URL";
+        return;
+      }
+
+      let method = methodSelect.value;
+      const body = requestBody.value;
+      const timeoutMs = Math.max(1000, Number(timeoutInput.value) || 120000);
+      if (method === "GET" && body.length > 0) {
+        method = "POST";
+      }
+
+      responseBox.value = "";
+      setUiEnabled(false);
+      statusText.textContent = "Sending (" + method + ")...";
+      const startedAt = performance.now();
+      let timeoutId = null;
+
+      try {
+        const controller = new AbortController();
+        timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+        const options = { method, signal: controller.signal };
+        if (method === "POST") {
+          // Use a simple request header so browser is less likely to send preflight OPTIONS.
+          options.headers = {
+            "Content-Type": "text/plain;charset=UTF-8"
+          };
+          options.body = body;
+        }
+
+        const resp = await fetch(rawUrl, options);
+  clearTimeout(timeoutId);
+  timeoutId = null;
+        const text = await resp.text();
+  const elapsedMs = Math.round(performance.now() - startedAt);
+
+        const contentType = (resp.headers.get("content-type") || "").toLowerCase();
+        let responseText = text;
+        if (contentType.includes("application/json") && text) {
+          try {
+            responseText = JSON.stringify(JSON.parse(text), null, 2);
+          } catch (_) {
+          }
+        }
+        const output = buildResponseOutput({
+          status: resp.status + " " + resp.statusText,
+          url: resp.url || rawUrl,
+          elapsedMs,
+          headersText: formatHeaders(resp.headers),
+          bodyText: responseText
+        });
+
+        if (!resp.ok) {
+          statusText.textContent = "Failed (" + resp.status + ")";
+        } else {
+          statusText.textContent = "Done";
+        }
+
+        responseBox.value = output;
+      } catch (err) {
+        if (timeoutId !== null) {
+          clearTimeout(timeoutId);
+          timeoutId = null;
+        }
+
+        // fetch 在部分情况下只能给出泛化错误；回退到 XHR 尝试拿到更多响应细节。
+        try {
+          const xhrResp = await sendByXhr(rawUrl, method, body, timeoutMs);
+          const elapsedMs = Math.round(performance.now() - startedAt);
+          responseBox.value = buildResponseOutput({
+            status: xhrResp.status + " " + xhrResp.statusText,
+            url: xhrResp.finalUrl,
+            elapsedMs,
+            headersText: xhrResp.headersText,
+            bodyText: xhrResp.bodyText
+          });
+          statusText.textContent = xhrResp.ok ? "Done (XHR)" : "Failed (" + xhrResp.status + ")";
+        } catch (xhrErr) {
+          let output = "Status: N/A\n";
+          output += "URL: " + rawUrl + "\n";
+          output += "Elapsed: " + Math.round(performance.now() - startedAt) + " ms\n\n";
+          if ((err && err.name === "AbortError") || (xhrErr && xhrErr.name === "TimeoutError")) {
+            output += "Timeout Error: request exceeded " + timeoutMs + " ms";
+            statusText.textContent = "Failed (Timeout)";
+          } else {
+            output += "Network Error: " + (err && err.message ? err.message : String(err));
+            output += "\nXHR Error: " + (xhrErr && xhrErr.message ? xhrErr.message : String(xhrErr));
+            statusText.textContent = "Failed";
+          }
+          output += "\n\nLikely causes:\n";
+          output += "1) URL/port unreachable\n";
+          output += "2) Browser CORS blocked (missing Access-Control-Allow-Origin on server)";
+          responseBox.value = output;
+        }
+      } finally {
+        setUiEnabled(true);
+      }
+    }
+
+    sendBtn.addEventListener("click", sendRequest);
+      // JS测试按钮功能
+      document.getElementById("testJsBtn").addEventListener("click", function() {
+        alert("Hello, JS!");
+      });
+  </script>
+</body>
+</html>

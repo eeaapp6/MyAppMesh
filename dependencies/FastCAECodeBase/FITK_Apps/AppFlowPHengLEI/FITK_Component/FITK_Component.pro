@@ -1,0 +1,18 @@
+TEMPLATE = subdirs
+
+SUBDIRS += \
+    $$PWD/FITKGeoCompOCC \
+    $$PWD/FITKRenderWindowVTK \
+    #$$PWD/FITKMeshGenOF \
+    $$PWD/FITKWidget \
+    $$PWD/FITKCompMessageWidget \
+    #$$PWD/FITKRenderWindowOCC \
+    $$PWD/FITKFluidVTKGraphAdaptor \
+    #$$PWD/FITKOFDictWriter \
+    $$PWD/FITKOFMeshIO \
+    $$PWD/FITKPlotWindow \
+    $$PWD/FITKGeoOCCIOHDF5 \
+    $$PWD/FITKFlowOFIOHDF5 \
+	$$PWD/FITKCGNSIO  \
+
+CONFIG += ordered

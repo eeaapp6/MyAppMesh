@@ -1,0 +1,16 @@
+<RCC>
+    <qresource prefix="/">
+        <file>res/icons_toolbar/saveImage.png</file>
+        <file>res/icons_toolbar/viewFit.svg</file>
+        <file>res/icons_toolbar/viewFront.svg</file>
+        <file>res/icons_toolbar/viewBack.svg</file>
+        <file>res/icons_toolbar/viewLeft.svg</file>
+        <file>res/icons_toolbar/viewRight.svg</file>
+        <file>res/icons_toolbar/viewTop.svg</file>
+        <file>res/icons_toolbar/viewBottom.svg</file>
+        <file>res/icons_toolbar/viewIso.svg</file>
+        <file>res/icons_toolbar/viewParallel.svg</file>
+        <file>res/icons_toolbar/viewPerspective.svg</file>
+        <file>res/icons_toolbar/gridLines.svg</file>
+    </qresource>
+</RCC>

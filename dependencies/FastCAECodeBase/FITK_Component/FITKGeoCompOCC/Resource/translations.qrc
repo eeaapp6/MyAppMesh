@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/">
+        <file>translations/Translate_FITKGeoCompOCC_EN.qm</file>
+        <file>translations/Translate_FITKGeoCompOCC_CN.qm</file>
+    </qresource>
+</RCC>

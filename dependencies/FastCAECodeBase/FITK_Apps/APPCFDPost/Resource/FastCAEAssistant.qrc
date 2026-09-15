@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/">
+        <file>FastCAEAssistantPy/.FastCAEAI/MCP/file_tools.py</file>
+    </qresource>
+</RCC>

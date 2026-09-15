@@ -1,0 +1,16 @@
+﻿#ifndef __FITK_AI_ASSISTANT_API_H__
+#define __FITK_AI_ASSISTANT_API_H__
+
+#include <QtCore/QtGlobal>
+
+#ifdef FITKAIAssistant_API
+#define FITKAIASSISTANTAPI Q_DECL_EXPORT
+#else
+#define FITKAIASSISTANTAPI Q_DECL_IMPORT
+#endif
+
+#ifndef FITKAIASSISTANT_VERSION
+#define FITKAIASSISTANT_VERSION "1.0.0"
+#endif
+
+#endif

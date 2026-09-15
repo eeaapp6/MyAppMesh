@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>923</width>
+    <height>735</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Post 3D</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QGridLayout" name="gridLayout">
+    <property name="leftMargin">
+     <number>0</number>
+    </property>
+    <property name="topMargin">
+     <number>0</number>
+    </property>
+    <property name="rightMargin">
+     <number>0</number>
+    </property>
+    <property name="bottomMargin">
+     <number>0</number>
+    </property>
+    <item row="0" column="0">
+     <widget class="QSplitter" name="splitter_2">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+      <widget class="QWidget" name="">
+       <layout class="QVBoxLayout" name="verticalLayout_Render"/>
+      </widget>
+      <widget class="QWidget" name="">
+       <layout class="QVBoxLayout" name="verticalLayout_Event"/>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QDockWidget" name="dockWidget">
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents">
+    <layout class="QGridLayout" name="gridLayout_3">
+     <item row="0" column="0">
+      <widget class="QSplitter" name="splitter">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+       <property name="opaqueResize">
+        <bool>false</bool>
+       </property>
+       <widget class="QWidget" name="gridLayoutWidget">
+        <layout class="QGridLayout" name="treeLayout"/>
+       </widget>
+       <widget class="QTabWidget" name="tabWidget">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>400</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="baseSize">
+         <size>
+          <width>0</width>
+          <height>100</height>
+         </size>
+        </property>
+        <property name="currentIndex">
+         <number>0</number>
+        </property>
+        <widget class="QWidget" name="tab">
+         <attribute name="title">
+          <string>Property</string>
+         </attribute>
+         <layout class="QGridLayout" name="gridLayout_4">
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <property name="spacing">
+           <number>0</number>
+          </property>
+          <item row="0" column="0">
+           <layout class="QGridLayout" name="propertyLayout"/>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="tab_2">
+         <attribute name="title">
+          <string>Info</string>
+         </attribute>
+         <layout class="QGridLayout" name="gridLayout_5">
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <property name="spacing">
+           <number>0</number>
+          </property>
+          <item row="0" column="0">
+           <layout class="QGridLayout" name="infoLayout"/>
+          </item>
+         </layout>
+        </widget>
+       </widget>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>923</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="actionWorkingDir"/>
+   </widget>
+   <addaction name="menuFile"/>
+  </widget>
+  <action name="actionOpen">
+   <property name="icon">
+    <iconset resource="../Resource/postResource.qrc">
+     <normaloff>:/icons/open.png</normaloff>:/icons/open.png</iconset>
+   </property>
+   <property name="text">
+    <string>Open</string>
+   </property>
+  </action>
+  <action name="actionFit">
+   <property name="icon">
+    <iconset resource="../Resource/postResource.qrc">
+     <normaloff>:/icons/fit.png</normaloff>:/icons/fit.png</iconset>
+   </property>
+   <property name="text">
+    <string>Fit</string>
+   </property>
+  </action>
+  <action name="actionXmin">
+   <property name="icon">
+    <iconset resource="../Resource/postResource.qrc">
+     <normaloff>:/icons/xMinus.png</normaloff>:/icons/xMinus.png</iconset>
+   </property>
+   <property name="text">
+    <string>Xmin</string>
+   </property>
+  </action>
+  <action name="actionXplus">
+   <property name="icon">
+    <iconset resource="../Resource/postResource.qrc">
+     <normaloff>:/icons/xPlus.png</normaloff>:/icons/xPlus.png</iconset>
+   </property>
+   <property name="text">
+    <string>Xplus</string>
+   </property>
+  </action>
+  <action name="actionYmin">
+   <property name="icon">
+    <iconset resource="../Resource/postResource.qrc">
+     <normaloff>:/icons/yMinus.png</normaloff>:/icons/yMinus.png</iconset>
+   </property>
+   <property name="text">
+    <string>Ymin</string>
+   </property>
+  </action>
+  <action name="actionYplus">
+   <property name="icon">
+    <iconset resource="../Resource/postResource.qrc">
+     <normaloff>:/icons/yPlus.png</normaloff>:/icons/yPlus.png</iconset>
+   </property>
+   <property name="text">
+    <string>Yplus</string>
+   </property>
+  </action>
+  <action name="actionZmin">
+   <property name="icon">
+    <iconset resource="../Resource/postResource.qrc">
+     <normaloff>:/icons/zMinus.png</normaloff>:/icons/zMinus.png</iconset>
+   </property>
+   <property name="text">
+    <string>Zmin</string>
+   </property>
+  </action>
+  <action name="actionZplus">
+   <property name="icon">
+    <iconset resource="../Resource/postResource.qrc">
+     <normaloff>:/icons/zPlus.png</normaloff>:/icons/zPlus.png</iconset>
+   </property>
+   <property name="text">
+    <string>Zplus</string>
+   </property>
+  </action>
+  <action name="actionSaveImage">
+   <property name="icon">
+    <iconset resource="../Resource/postResource.qrc">
+     <normaloff>:/icons/saveImage.png</normaloff>:/icons/saveImage.png</iconset>
+   </property>
+   <property name="text">
+    <string>SaveImage</string>
+   </property>
+  </action>
+  <action name="actionVideo">
+   <property name="icon">
+    <iconset resource="../Resource/postResource.qrc">
+     <normaloff>:/icons/video.png</normaloff>:/icons/video.png</iconset>
+   </property>
+   <property name="text">
+    <string>Video</string>
+   </property>
+   <property name="toolTip">
+    <string>Video</string>
+   </property>
+  </action>
+  <action name="actionWorkingDir">
+   <property name="text">
+    <string>Working Dir</string>
+   </property>
+  </action>
+  <action name="actionLight">
+   <property name="text">
+    <string>Light</string>
+   </property>
+  </action>
+ </widget>
+ <resources>
+  <include location="../Resource/postResource.qrc"/>
+ </resources>
+ <connections/>
+</ui>

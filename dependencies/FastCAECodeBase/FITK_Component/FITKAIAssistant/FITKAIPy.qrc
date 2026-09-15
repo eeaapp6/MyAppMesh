@@ -1,0 +1,18 @@
+<RCC>
+    <qresource prefix="/">
+        <file>FastCAEAssistantPy/.env</file>
+        <file>FastCAEAssistantPy/FastCAEAssistant.py</file>
+        <file>FastCAEAssistantPy/requirements.txt</file>
+        <file>FastCAEAssistantPy/fastcaeassistant/__init__.py</file>
+        <file>FastCAEAssistantPy/fastcaeassistant/cli.py</file>
+        <file>FastCAEAssistantPy/fastcaeassistant/fastcae_context.py</file>
+        <file>FastCAEAssistantPy/fastcaeassistant/llm_client.py</file>
+        <file>FastCAEAssistantPy/fastcaeassistant/mcp_registry.py</file>
+        <file>FastCAEAssistantPy/fastcaeassistant/mcp_smoke.py</file>
+        <file>FastCAEAssistantPy/fastcaeassistant/orchestrator.py</file>
+        <file>FastCAEAssistantPy/fastcaeassistant/settings.py</file>
+        <file>FastCAEAssistantPy/.FastCAEAI/MCP/demo_tools.py</file>
+        <file>FastCAEAssistantPy/.FastCAEAI/MCP/extra_tools.py</file>
+        <file>FastCAEAssistantPy/.FastCAEAI/MCP/submitPython.py</file>
+    </qresource>
+</RCC>

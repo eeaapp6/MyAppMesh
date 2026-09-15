@@ -1,0 +1,27 @@
+[submodule "FITK_Kernel/FITKCore"]
+	path = FITK_Kernel/FITKCore
+	url = https://atomgit.com/fastcaecodebase/FITKCore.git
+[submodule "FITK_Kernel/FITKAppFramework"]
+	path = FITK_Kernel/FITKAppFramework
+	url = https://atomgit.com/fastcaecodebase/FITKAppFramework.git
+[submodule "FITK_Interface/FITKVTKAlgorithm"]
+	path = FITK_Interface/FITKVTKAlgorithm
+	url = https://atomgit.com/fastcaecodebase/FITKVTKAlgorithm.git
+[submodule "Tools"]
+	path = Tools
+	url = https://atomgit.com/fastcaecodebase/Tools.git
+[submodule "FITK_Interface/FITKInterfaceCFDPost"]
+	path = FITK_Interface/FITKInterfaceCFDPost
+	url = https://atomgit.com/fastcaecodebase/FITKInterfaceCFDPost.git
+[submodule "FITK_Component/FITKRenderWindowVTK"]
+	path = FITK_Component/FITKRenderWindowVTK
+	url = https://atomgit.com/fastcaecodebase/FITKRenderWindowVTK.git
+[submodule "FITK_Component/FITKWidget"]
+	path = FITK_Component/FITKWidget
+	url = https://atomgit.com/fastcaecodebase/FITKWidget.git
+[submodule "FITK_Kernel/FITKEasyParam"]
+	path = FITK_Kernel/FITKEasyParam
+	url = https://atomgit.com/fastcaecodebase/FITKEasyParam.git
+[submodule "FITK_Component/FITKPlotWindow"]
+	path = FITK_Component/FITKPlotWindow
+	url = https://atomgit.com/fastcaecodebase/FITKPlotWindow.git

@@ -1,0 +1,62 @@
+﻿/*
+Copyright (c) 2020-2026, Qingdao Digital Intelligent Ship & Ocean Technology Co., Ltd.
+All rights reserved.
+
+This file is part of FastCAE and is distributed under the terms of the
+BSD 3-Clause License. See the LICENSE file in the project root for details.
+*/
+
+/**
+ *
+ * @file FITKPHengLEIWriteCFDPISO.h
+ * @brief PISO参数文件写出
+ * @author LiBaojun (libaojunqd@foxmail.com)
+ * @date 2024-09-12
+ *
+ */
+#ifndef _FITKPHENGLEI_WRITE_CFD_PISO_H___
+#define _FITKPHENGLEI_WRITE_CFD_PISO_H___
+
+#include "FITKPHengLEIAbsParaWriter.h"
+#include "FITK_Interface/FITKInterfaceIO/FITKAbstractTextWriter.h"
+#include "FITKInterfaceFlowPHengLEIAPI.h"
+#include <QString>
+
+namespace Interface
+{
+	/**
+	 * @brief PISO参数文件写出
+	 * @author LiBaojun (libaojunqd@foxmail.com)
+	 * @date 2024-09-12
+	 */
+	class FITKFlowPHengLEIAPI FITKPHengLEIWriteCFDPISO : public FITKPHengLEIAbsParaWriter
+	{
+	public:
+		/**
+		 * @brief Construct a new FITKPHengLEIWriteCFDPISO object
+		 * @author LiBaojun (libaojunqd@foxmail.com)
+		 * @date 2024-09-12
+		 */
+		explicit  FITKPHengLEIWriteCFDPISO() = default;
+		/**
+		 * @brief Destroy the FITKPHengLEIWriteCFDPISO object
+		 * @author LiBaojun (libaojunqd@foxmail.com)
+		 * @date 2024-09-12
+		 */
+		virtual ~FITKPHengLEIWriteCFDPISO() = default;
+		/**
+		 * @brief 执行写出
+		 * @author LiBaojun (libaojunqd@foxmail.com)
+		 * @date 2024-09-12
+		 */
+		bool writeParamFile() override;
+
+		void consoleMessage(int level, const QString& str) override;
+
+		void run() override;
+	};
+
+}
+
+
+#endif

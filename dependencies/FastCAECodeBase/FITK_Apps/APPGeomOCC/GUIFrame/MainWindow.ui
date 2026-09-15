@@ -1,0 +1,1452 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1505</width>
+    <height>707</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>FastCAE-GeomOCC</string>
+  </property>
+  <widget class="QWidget" name="centralwidget"/>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1505</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="actionOpenProject"/>
+    <addaction name="actionSaveProject"/>
+    <addaction name="separator"/>
+    <addaction name="actionImportCreate"/>
+    <addaction name="actionExport"/>
+    <addaction name="separator"/>
+    <addaction name="actionGUIViewSaveImage"/>
+   </widget>
+   <widget class="QMenu" name="menuCreate">
+    <property name="title">
+     <string>Create</string>
+    </property>
+    <widget class="QMenu" name="menuSolid">
+     <property name="title">
+      <string>Solid</string>
+     </property>
+     <addaction name="actionClosedSurfaceSolidCreate"/>
+     <addaction name="actionExtrudeSolidCreate"/>
+     <addaction name="actionRevolSolidCreate"/>
+     <addaction name="actionSweepSolidCreate"/>
+     <addaction name="actionMultiSectionSolidCreate"/>
+     <addaction name="separator"/>
+     <addaction name="actionFilletSolidCreate"/>
+     <addaction name="actionChamferSolidCreate"/>
+     <addaction name="actionDefeatureCreate"/>
+     <addaction name="actionImprintSolidCreate"/>
+     <addaction name="separator"/>
+     <addaction name="actionBoxCreate"/>
+     <addaction name="actionSphereCreate"/>
+     <addaction name="actionCylinderCreate"/>
+    </widget>
+    <widget class="QMenu" name="menuCurve">
+     <property name="title">
+      <string>Curve</string>
+     </property>
+     <addaction name="actionSegmentCreate"/>
+     <addaction name="actionThreePointsCircleCreate"/>
+     <addaction name="actionThreePointsEllipseCreate"/>
+     <addaction name="actionThreePointsHyperbolaCreate"/>
+     <addaction name="actionThreePointsParabolaCreate"/>
+     <addaction name="actionBSplineByThroughPointsCreate"/>
+     <addaction name="actionOffsetCurveCreate"/>
+     <addaction name="actionCurveProjectionOnSurfaceCreate"/>
+     <addaction name="actionSurfaceIntersectSurfaceCreate"/>
+     <addaction name="actionBridgeCurveCreate"/>
+     <addaction name="actionCurveFromSurfaceCreate"/>
+    </widget>
+    <widget class="QMenu" name="menuSurface">
+     <property name="title">
+      <string>Surface</string>
+     </property>
+     <addaction name="actionClosedWireSurfaceCreate"/>
+     <addaction name="actionOffsetSurfaceCreate"/>
+     <addaction name="actionExtrudeSurfaceCreate"/>
+     <addaction name="actionRevolSurfaceCreate"/>
+     <addaction name="actionSweepSurfaceCreate"/>
+     <addaction name="actionBridgeSurfaceCreate"/>
+     <addaction name="actionSurfaceFromSolidCreate"/>
+     <addaction name="actionMultiSectionSurfaceCreate"/>
+    </widget>
+    <widget class="QMenu" name="menuPoint">
+     <property name="title">
+      <string>Point</string>
+     </property>
+     <addaction name="actionPointCreate"/>
+     <addaction name="actionCurveEndCreate"/>
+     <addaction name="actionCurveRatioCreate"/>
+     <addaction name="actionCurveEndDistanceCreate"/>
+     <addaction name="actionPointProjectionOnCurveCreate"/>
+     <addaction name="actionTwoCurveIntersectPointCreate"/>
+     <addaction name="actionPointProjectionOnSurfaceCreate"/>
+     <addaction name="actionCurveIntersectSurfaceCreate"/>
+     <addaction name="actionInteractionPointCreate"/>
+    </widget>
+    <widget class="QMenu" name="menuReferences">
+     <property name="title">
+      <string>References</string>
+     </property>
+     <addaction name="actionReferencePointCreate"/>
+     <addaction name="actionReferenceLineCreate"/>
+     <addaction name="actionReferencePlaneCreate"/>
+    </widget>
+    <addaction name="menuReferences"/>
+    <addaction name="separator"/>
+    <addaction name="menuPoint"/>
+    <addaction name="menuCurve"/>
+    <addaction name="menuSurface"/>
+    <addaction name="menuSolid"/>
+   </widget>
+   <widget class="QMenu" name="menuView">
+    <property name="title">
+     <string>View</string>
+    </property>
+    <addaction name="actionGUIViewFront"/>
+    <addaction name="actionGUIViewBack"/>
+    <addaction name="actionGUIViewLeft"/>
+    <addaction name="actionGUIViewRight"/>
+    <addaction name="actionGUIViewTop"/>
+    <addaction name="actionGUIViewBottom"/>
+    <addaction name="actionGUIViewISO"/>
+    <addaction name="separator"/>
+    <addaction name="actionGUIViewOrthogonal"/>
+    <addaction name="actionGUIViewPerspective"/>
+    <addaction name="separator"/>
+    <addaction name="actionGUIViewAutoFit"/>
+   </widget>
+   <widget class="QMenu" name="menuSketcher">
+    <property name="title">
+     <string>Sketch</string>
+    </property>
+    <addaction name="actionSketchLine"/>
+    <addaction name="actionSketchWire"/>
+    <addaction name="actionSketchRectangle"/>
+    <addaction name="actionSketchCircle"/>
+    <addaction name="actionSketchCircleArc"/>
+    <addaction name="actionSketchEllipse"/>
+    <addaction name="actionSketchHyperbolaArc"/>
+    <addaction name="actionSketchParabolaArc"/>
+    <addaction name="actionSketchBezier"/>
+    <addaction name="actionSketchBspline"/>
+   </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>Help</string>
+    </property>
+    <addaction name="actionLicense"/>
+   </widget>
+   <widget class="QMenu" name="menuOptions">
+    <property name="title">
+     <string>Options</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menuEdit">
+    <property name="title">
+     <string>Edit</string>
+    </property>
+    <widget class="QMenu" name="menuTransform">
+     <property name="title">
+      <string>Transform</string>
+     </property>
+     <addaction name="actionTransformCreate"/>
+     <addaction name="actionRotateCreate"/>
+     <addaction name="actionScaleCreate"/>
+     <addaction name="actionMirrorCreate"/>
+     <addaction name="actionRectangularPatternCreate"/>
+     <addaction name="actionCircularPatternCreate"/>
+    </widget>
+    <widget class="QMenu" name="menuSplitter">
+     <property name="title">
+      <string>Splitter</string>
+     </property>
+     <addaction name="actionCurveSplitterCreate"/>
+     <addaction name="actionSurfaceSplitterCreate"/>
+     <addaction name="actionSolidSplitterCreate"/>
+    </widget>
+    <widget class="QMenu" name="menuFeature">
+     <property name="title">
+      <string>Feature</string>
+     </property>
+     <addaction name="actionChamferSolidCreate"/>
+     <addaction name="actionFilletSolidCreate"/>
+     <addaction name="actionDefeatureCreate"/>
+     <addaction name="actionImprintSolidCreate"/>
+     <addaction name="actionDeleteFloatingEdgeCreate"/>
+     <addaction name="actionMergeLineCreate"/>
+     <addaction name="actionFillGapsFaceCreate"/>
+     <addaction name="actionStiffenerCreate"/>
+    </widget>
+    <widget class="QMenu" name="menuBoolean_2">
+     <property name="title">
+      <string>Boolean</string>
+     </property>
+     <addaction name="actionUniteCreate"/>
+     <addaction name="actionIntersectCreate"/>
+     <addaction name="actionSubtractCreate"/>
+    </widget>
+    <widget class="QMenu" name="menuCompound">
+     <property name="title">
+      <string>Compound</string>
+     </property>
+     <addaction name="actionCompoundAppendShapeCreate"/>
+     <addaction name="actionCompoundRemoveShapeCreate"/>
+    </widget>
+    <addaction name="menuBoolean_2"/>
+    <addaction name="separator"/>
+    <addaction name="menuCompound"/>
+    <addaction name="separator"/>
+    <addaction name="menuFeature"/>
+    <addaction name="menuTransform"/>
+    <addaction name="menuSplitter"/>
+   </widget>
+   <widget class="QMenu" name="menuGroup">
+    <property name="title">
+     <string>Group</string>
+    </property>
+    <addaction name="actionComponentCreate"/>
+   </widget>
+   <widget class="QMenu" name="menuAI">
+    <property name="title">
+     <string>AI</string>
+    </property>
+    <addaction name="actionAIAgent"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuCreate"/>
+   <addaction name="menuEdit"/>
+   <addaction name="menuGroup"/>
+   <addaction name="menuView"/>
+   <addaction name="menuSketcher"/>
+   <addaction name="menuOptions"/>
+   <addaction name="menuHelp"/>
+   <addaction name="menuAI"/>
+  </widget>
+  <widget class="QToolBar" name="toolBarFile">
+   <property name="windowTitle">
+    <string>File</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionOpenProject"/>
+   <addaction name="actionSaveProject"/>
+   <addaction name="separator"/>
+   <addaction name="actionImportCreate"/>
+   <addaction name="actionExport"/>
+   <addaction name="separator"/>
+   <addaction name="actionGUIViewSaveImage"/>
+  </widget>
+  <widget class="QToolBar" name="toolBarView">
+   <property name="windowTitle">
+    <string>View</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionGUIViewFront"/>
+   <addaction name="actionGUIViewBack"/>
+   <addaction name="actionGUIViewLeft"/>
+   <addaction name="actionGUIViewRight"/>
+   <addaction name="actionGUIViewTop"/>
+   <addaction name="actionGUIViewBottom"/>
+   <addaction name="actionGUIViewISO"/>
+   <addaction name="actionGUIViewAutoFit"/>
+   <addaction name="actionGUIViewOrthogonal"/>
+   <addaction name="actionGUIViewPerspective"/>
+  </widget>
+  <widget class="QToolBar" name="toolBarDatum">
+   <property name="windowTitle">
+    <string>Datum</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionReferencePointCreate"/>
+   <addaction name="actionReferenceLineCreate"/>
+   <addaction name="actionReferencePlaneCreate"/>
+  </widget>
+  <widget class="QToolBar" name="toolBarPrimitives">
+   <property name="windowTitle">
+    <string>Primitives</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionBoxCreate"/>
+   <addaction name="actionCylinderCreate"/>
+   <addaction name="actionSphereCreate"/>
+  </widget>
+  <widget class="QToolBar" name="toolBarSketcher">
+   <property name="windowTitle">
+    <string>Sketcher</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionSketch2DCreate"/>
+  </widget>
+  <widget class="QToolBar" name="toolBarProfile">
+   <property name="windowTitle">
+    <string>Profile</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionSketchLine"/>
+   <addaction name="actionSketchWire"/>
+   <addaction name="actionSketchRectangle"/>
+   <addaction name="actionSketchCircle"/>
+   <addaction name="actionSketchCircleArc"/>
+   <addaction name="actionSketchEllipse"/>
+   <addaction name="actionSketchHyperbolaArc"/>
+   <addaction name="actionSketchParabolaArc"/>
+   <addaction name="actionSketchBezier"/>
+   <addaction name="actionSketchBspline"/>
+  </widget>
+  <widget class="QToolBar" name="toolBarPoint">
+   <property name="windowTitle">
+    <string>Point</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>true</bool>
+   </attribute>
+   <addaction name="actionPointCreate"/>
+   <addaction name="actionCurveEndCreate"/>
+   <addaction name="actionCurveRatioCreate"/>
+   <addaction name="actionCurveEndDistanceCreate"/>
+   <addaction name="actionPointProjectionOnCurveCreate"/>
+   <addaction name="actionTwoCurveIntersectPointCreate"/>
+   <addaction name="actionPointProjectionOnSurfaceCreate"/>
+   <addaction name="actionCurveIntersectSurfaceCreate"/>
+   <addaction name="actionInteractionPointCreate"/>
+  </widget>
+  <widget class="QToolBar" name="toolBarEdge">
+   <property name="windowTitle">
+    <string>Edge</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionSegmentCreate"/>
+   <addaction name="actionThreePointsCircleCreate"/>
+   <addaction name="actionThreePointsEllipseCreate"/>
+   <addaction name="actionThreePointsHyperbolaCreate"/>
+   <addaction name="actionThreePointsParabolaCreate"/>
+   <addaction name="actionBSplineByThroughPointsCreate"/>
+   <addaction name="actionSurfaceIntersectSurfaceCreate"/>
+   <addaction name="actionCurveProjectionOnSurfaceCreate"/>
+   <addaction name="actionBridgeCurveCreate"/>
+   <addaction name="actionCurveFromSurfaceCreate"/>
+   <addaction name="actionOffsetCurveCreate"/>
+  </widget>
+  <widget class="QToolBar" name="toolBarSurface">
+   <property name="windowTitle">
+    <string>Surface</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionClosedWireSurfaceCreate"/>
+   <addaction name="actionExtrudeSurfaceCreate"/>
+   <addaction name="actionRevolSurfaceCreate"/>
+   <addaction name="actionSweepSurfaceCreate"/>
+   <addaction name="actionOffsetSurfaceCreate"/>
+   <addaction name="actionBridgeSurfaceCreate"/>
+   <addaction name="actionSurfaceFromSolidCreate"/>
+   <addaction name="actionMultiSectionSurfaceCreate"/>
+  </widget>
+  <widget class="QToolBar" name="toolBarSolid">
+   <property name="windowTitle">
+    <string>Features</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionClosedSurfaceSolidCreate"/>
+   <addaction name="actionExtrudeSolidCreate"/>
+   <addaction name="actionRevolSolidCreate"/>
+   <addaction name="actionSweepSolidCreate"/>
+   <addaction name="actionMultiSectionSolidCreate"/>
+  </widget>
+  <widget class="QToolBar" name="toolBarBoolean">
+   <property name="windowTitle">
+    <string>Boolean</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>true</bool>
+   </attribute>
+   <addaction name="actionUniteCreate"/>
+   <addaction name="actionIntersectCreate"/>
+   <addaction name="actionSubtractCreate"/>
+   <addaction name="actionNBodyUniteCreate"/>
+   <addaction name="actionCompoundAppendShapeCreate"/>
+   <addaction name="actionCompoundRemoveShapeCreate"/>
+  </widget>
+  <widget class="QToolBar" name="toolBarFeatures">
+   <property name="windowTitle">
+    <string>Dress-Up Features</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionChamferSolidCreate"/>
+   <addaction name="actionFilletSolidCreate"/>
+   <addaction name="actionDefeatureCreate"/>
+   <addaction name="actionImprintSolidCreate"/>
+   <addaction name="actionDeleteFloatingEdgeCreate"/>
+   <addaction name="actionMergeLineCreate"/>
+   <addaction name="actionFillGapsFaceCreate"/>
+   <addaction name="actionStiffenerCreate"/>
+  </widget>
+  <widget class="QToolBar" name="toolBarTransform">
+   <property name="windowTitle">
+    <string>Transform</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionTransformCreate"/>
+   <addaction name="actionRotateCreate"/>
+   <addaction name="actionScaleCreate"/>
+   <addaction name="actionMirrorCreate"/>
+   <addaction name="actionRectangularPatternCreate"/>
+   <addaction name="actionCircularPatternCreate"/>
+  </widget>
+  <widget class="QToolBar" name="toolBarEdit">
+   <property name="windowTitle">
+    <string>Splitter</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionCurveSplitterCreate"/>
+   <addaction name="actionSurfaceSplitterCreate"/>
+   <addaction name="actionSolidSplitterCreate"/>
+  </widget>
+  <widget class="QStatusBar" name="statusBar"/>
+  <widget class="QToolBar" name="toolBarOperate">
+   <property name="windowTitle">
+    <string>Operate</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionUndo"/>
+   <addaction name="actionRedo"/>
+   <addaction name="actionHideFaces"/>
+  </widget>
+  <widget class="QToolBar" name="toolBarDev">
+   <property name="windowTitle">
+    <string>Test</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>true</bool>
+   </attribute>
+   <addaction name="actionDistance"/>
+  </widget>
+  <action name="actionExtrudeSolidCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_solids/solid_extrude.png</normaloff>:/app/icons/toolbars/make_solids/solid_extrude.png</iconset>
+   </property>
+   <property name="text">
+    <string>Extrude</string>
+   </property>
+   <property name="toolTip">
+    <string>Extrude</string>
+   </property>
+  </action>
+  <action name="actionBoxCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_primitives/primitives_box.png</normaloff>:/app/icons/toolbars/make_primitives/primitives_box.png</iconset>
+   </property>
+   <property name="text">
+    <string>Box</string>
+   </property>
+  </action>
+  <action name="actionSphereCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_primitives/primitives_sphere.png</normaloff>:/app/icons/toolbars/make_primitives/primitives_sphere.png</iconset>
+   </property>
+   <property name="text">
+    <string>Sphere</string>
+   </property>
+  </action>
+  <action name="actionUniteCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_boolean/boolean_unite.png</normaloff>:/app/icons/toolbars/make_boolean/boolean_unite.png</iconset>
+   </property>
+   <property name="text">
+    <string>Unite</string>
+   </property>
+  </action>
+  <action name="actionIntersectCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_boolean/boolean_intersect.png</normaloff>:/app/icons/toolbars/make_boolean/boolean_intersect.png</iconset>
+   </property>
+   <property name="text">
+    <string>Intersect</string>
+   </property>
+  </action>
+  <action name="actionSubtractCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_boolean/boolean_subtract.png</normaloff>:/app/icons/toolbars/make_boolean/boolean_subtract.png</iconset>
+   </property>
+   <property name="text">
+    <string>Subtract</string>
+   </property>
+  </action>
+  <action name="actionCylinderCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_primitives/primitives_cylinder.png</normaloff>:/app/icons/toolbars/make_primitives/primitives_cylinder.png</iconset>
+   </property>
+   <property name="text">
+    <string>Cylinder</string>
+   </property>
+  </action>
+  <action name="actionImportCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/file/file_importGeometry.png</normaloff>:/app/icons/toolbars/file/file_importGeometry.png</iconset>
+   </property>
+   <property name="text">
+    <string>Import Geometry</string>
+   </property>
+  </action>
+  <action name="actionGUIViewFront">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/view/view_front.svg</normaloff>:/app/icons/toolbars/view/view_front.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Front</string>
+   </property>
+  </action>
+  <action name="actionGUIViewBack">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/view/view_back.svg</normaloff>:/app/icons/toolbars/view/view_back.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Back</string>
+   </property>
+  </action>
+  <action name="actionGUIViewLeft">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/view/view_left.svg</normaloff>:/app/icons/toolbars/view/view_left.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Left</string>
+   </property>
+  </action>
+  <action name="actionGUIViewRight">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/view/view_right.svg</normaloff>:/app/icons/toolbars/view/view_right.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Right</string>
+   </property>
+  </action>
+  <action name="actionGUIViewTop">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/view/view_top.svg</normaloff>:/app/icons/toolbars/view/view_top.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Top</string>
+   </property>
+  </action>
+  <action name="actionGUIViewBottom">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/view/view_bottom.svg</normaloff>:/app/icons/toolbars/view/view_bottom.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Bottom</string>
+   </property>
+  </action>
+  <action name="actionGUIViewISO">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/view/view_iso.svg</normaloff>:/app/icons/toolbars/view/view_iso.svg</iconset>
+   </property>
+   <property name="text">
+    <string>ISO</string>
+   </property>
+  </action>
+  <action name="actionGUIViewPerspective">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/view/view_perspective.svg</normaloff>:/app/icons/toolbars/view/view_perspective.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Perspective</string>
+   </property>
+  </action>
+  <action name="actionGUIViewSaveImage">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/file/file_saveImage.png</normaloff>:/app/icons/toolbars/file/file_saveImage.png</iconset>
+   </property>
+   <property name="text">
+    <string>Save Image</string>
+   </property>
+  </action>
+  <action name="actionGUIViewAutoFit">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/view/view_fit.svg</normaloff>:/app/icons/toolbars/view/view_fit.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Auto Fit</string>
+   </property>
+  </action>
+  <action name="actionSegmentCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_edges/edge_segment.png</normaloff>:/app/icons/toolbars/make_edges/edge_segment.png</iconset>
+   </property>
+   <property name="text">
+    <string>Segment</string>
+   </property>
+  </action>
+  <action name="actionThreePointsCircleCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/sketch/sketch_circle.png</normaloff>:/app/icons/toolbars/sketch/sketch_circle.png</iconset>
+   </property>
+   <property name="text">
+    <string>Circle</string>
+   </property>
+  </action>
+  <action name="actionThreePointsEllipseCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_edges/edge_ellipse.png</normaloff>:/app/icons/toolbars/make_edges/edge_ellipse.png</iconset>
+   </property>
+   <property name="text">
+    <string>Ellipse</string>
+   </property>
+  </action>
+  <action name="actionThreePointsHyperbolaCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_edges/edge_hyperbola.png</normaloff>:/app/icons/toolbars/make_edges/edge_hyperbola.png</iconset>
+   </property>
+   <property name="text">
+    <string>Hyperbola</string>
+   </property>
+  </action>
+  <action name="actionThreePointsParabolaCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_edges/edge_parabola.png</normaloff>:/app/icons/toolbars/make_edges/edge_parabola.png</iconset>
+   </property>
+   <property name="text">
+    <string>Parabola</string>
+   </property>
+  </action>
+  <action name="actionGUIViewOrthogonal">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/view/view_parallel.svg</normaloff>:/app/icons/toolbars/view/view_parallel.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Orthogonal</string>
+   </property>
+  </action>
+  <action name="actionOffsetSurfaceCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_faces/face_offset.png</normaloff>:/app/icons/toolbars/make_faces/face_offset.png</iconset>
+   </property>
+   <property name="text">
+    <string>Offset Surface</string>
+   </property>
+  </action>
+  <action name="actionExtrudeSurfaceCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_faces/face_extrude.png</normaloff>:/app/icons/toolbars/make_faces/face_extrude.png</iconset>
+   </property>
+   <property name="text">
+    <string>Extrude</string>
+   </property>
+   <property name="toolTip">
+    <string>Extrude</string>
+   </property>
+  </action>
+  <action name="actionRevolSurfaceCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_faces/face_revolution.png</normaloff>:/app/icons/toolbars/make_faces/face_revolution.png</iconset>
+   </property>
+   <property name="text">
+    <string>Revolution</string>
+   </property>
+  </action>
+  <action name="actionRevolSolidCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_solids/solid_revol.png</normaloff>:/app/icons/toolbars/make_solids/solid_revol.png</iconset>
+   </property>
+   <property name="text">
+    <string>Revolution</string>
+   </property>
+  </action>
+  <action name="actionSweepSurfaceCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_faces/face_sweep.png</normaloff>:/app/icons/toolbars/make_faces/face_sweep.png</iconset>
+   </property>
+   <property name="text">
+    <string>Sweep</string>
+   </property>
+  </action>
+  <action name="actionSweepSolidCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_solids/solid_sweep.png</normaloff>:/app/icons/toolbars/make_solids/solid_sweep.png</iconset>
+   </property>
+   <property name="text">
+    <string>Sweep</string>
+   </property>
+  </action>
+  <action name="actionChamferSolidCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_features/feature_chamfer.png</normaloff>:/app/icons/toolbars/make_features/feature_chamfer.png</iconset>
+   </property>
+   <property name="text">
+    <string>Chamfer</string>
+   </property>
+  </action>
+  <action name="actionFilletSolidCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_features/feature_fillet.png</normaloff>:/app/icons/toolbars/make_features/feature_fillet.png</iconset>
+   </property>
+   <property name="text">
+    <string>Fillet</string>
+   </property>
+  </action>
+  <action name="actionSketch2DCreate">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/sketch/sketch.png</normaloff>:/app/icons/toolbars/sketch/sketch.png</iconset>
+   </property>
+   <property name="text">
+    <string>Sketch</string>
+   </property>
+   <property name="toolTip">
+    <string>Sketch</string>
+   </property>
+  </action>
+  <action name="actionSketchLine">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/sketch/sketch_line.png</normaloff>:/app/icons/toolbars/sketch/sketch_line.png</iconset>
+   </property>
+   <property name="text">
+    <string>Line</string>
+   </property>
+  </action>
+  <action name="actionSketchCircle">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/sketch/sketch_circle.png</normaloff>:/app/icons/toolbars/sketch/sketch_circle.png</iconset>
+   </property>
+   <property name="text">
+    <string>Circle</string>
+   </property>
+  </action>
+  <action name="actionSketchCircleArc">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/sketch/sketch_arc.png</normaloff>:/app/icons/toolbars/sketch/sketch_arc.png</iconset>
+   </property>
+   <property name="text">
+    <string>Arc</string>
+   </property>
+  </action>
+  <action name="actionSketchEllipse">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/sketch/sketch_ellipse.png</normaloff>:/app/icons/toolbars/sketch/sketch_ellipse.png</iconset>
+   </property>
+   <property name="text">
+    <string>Ellipse</string>
+   </property>
+  </action>
+  <action name="actionSketchRectangle">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/sketch/sketch_rect.png</normaloff>:/app/icons/toolbars/sketch/sketch_rect.png</iconset>
+   </property>
+   <property name="text">
+    <string>Rectangle</string>
+   </property>
+   <property name="toolTip">
+    <string>Rectangle</string>
+   </property>
+  </action>
+  <action name="actionSketchPolygon">
+   <property name="text">
+    <string>Polygon</string>
+   </property>
+  </action>
+  <action name="actionSketchBezier">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/sketch/sketch_bezier.png</normaloff>:/app/icons/toolbars/sketch/sketch_bezier.png</iconset>
+   </property>
+   <property name="text">
+    <string>Bezier</string>
+   </property>
+  </action>
+  <action name="actionSketchBspline">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/sketch/sketch_bspline.png</normaloff>:/app/icons/toolbars/sketch/sketch_bspline.png</iconset>
+   </property>
+   <property name="text">
+    <string>Bspline</string>
+   </property>
+  </action>
+  <action name="actionSketchWire">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/sketch/sketch_wire.png</normaloff>:/app/icons/toolbars/sketch/sketch_wire.png</iconset>
+   </property>
+   <property name="text">
+    <string>Wire</string>
+   </property>
+  </action>
+  <action name="actionMergeLineCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_features/feature_mergeCurve.png</normaloff>:/app/icons/toolbars/make_features/feature_mergeCurve.png</iconset>
+   </property>
+   <property name="text">
+    <string>Merge Edge</string>
+   </property>
+   <property name="toolTip">
+    <string>Merge Line</string>
+   </property>
+  </action>
+  <action name="actionRemoveChamferCreate">
+   <property name="text">
+    <string>Remove Chamfer</string>
+   </property>
+  </action>
+  <action name="actionRemoveFilletCreate">
+   <property name="text">
+    <string>Remove Fillet</string>
+   </property>
+  </action>
+  <action name="actionFillHoleCreate">
+   <property name="text">
+    <string>Fill Hole</string>
+   </property>
+  </action>
+  <action name="actionExport">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/file/file_exportGeometry.png</normaloff>:/app/icons/toolbars/file/file_exportGeometry.png</iconset>
+   </property>
+   <property name="text">
+    <string>Export Geometry</string>
+   </property>
+  </action>
+  <action name="actionOffsetCurveCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_edges/edge_offset.png</normaloff>:/app/icons/toolbars/make_edges/edge_offset.png</iconset>
+   </property>
+   <property name="text">
+    <string>Offset Curve</string>
+   </property>
+  </action>
+  <action name="actionDefeatureCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_features/feature_defeature.png</normaloff>:/app/icons/toolbars/make_features/feature_defeature.png</iconset>
+   </property>
+   <property name="text">
+    <string>Defeature</string>
+   </property>
+  </action>
+  <action name="actionCurveProjectionOnSurfaceCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_edges/edge_curveSurfProj.png</normaloff>:/app/icons/toolbars/make_edges/edge_curveSurfProj.png</iconset>
+   </property>
+   <property name="text">
+    <string>Curve Projection On Surface</string>
+   </property>
+  </action>
+  <action name="actionSurfaceIntersectSurfaceCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_edges/edge_surfSurfInt.png</normaloff>:/app/icons/toolbars/make_edges/edge_surfSurfInt.png</iconset>
+   </property>
+   <property name="text">
+    <string>Surface Intersect Surface</string>
+   </property>
+   <property name="toolTip">
+    <string>Surface Intersection With Surface</string>
+   </property>
+  </action>
+  <action name="actionClosedWireSurfaceCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_faces/face_closedWire.png</normaloff>:/app/icons/toolbars/make_faces/face_closedWire.png</iconset>
+   </property>
+   <property name="text">
+    <string>Closed Wire Surface</string>
+   </property>
+   <property name="toolTip">
+    <string>Closed Wire Surface</string>
+   </property>
+  </action>
+  <action name="actionDeleteFloatingEdgeCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_features/feature_deleteFloatEdge.png</normaloff>:/app/icons/toolbars/make_features/feature_deleteFloatEdge.png</iconset>
+   </property>
+   <property name="text">
+    <string>Remove Floating Edge</string>
+   </property>
+   <property name="toolTip">
+    <string>Delete Floating Edge</string>
+   </property>
+  </action>
+  <action name="actionFillGapsFaceCreate">
+   <property name="text">
+    <string>Fill Gaps</string>
+   </property>
+   <property name="iconText">
+    <string>Fill Gaps</string>
+   </property>
+   <property name="toolTip">
+    <string>Fill Face</string>
+   </property>
+  </action>
+  <action name="actionPointCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_points/point_coordinate.png</normaloff>:/app/icons/toolbars/make_points/point_coordinate.png</iconset>
+   </property>
+   <property name="text">
+    <string>Coordinate Point</string>
+   </property>
+  </action>
+  <action name="actionCurveEndCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_points/point_curveEnd.png</normaloff>:/app/icons/toolbars/make_points/point_curveEnd.png</iconset>
+   </property>
+   <property name="text">
+    <string>Curve End</string>
+   </property>
+  </action>
+  <action name="actionCurveRatioCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_points/point_curveRatio.png</normaloff>:/app/icons/toolbars/make_points/point_curveRatio.png</iconset>
+   </property>
+   <property name="text">
+    <string>Curve and Ratio</string>
+   </property>
+  </action>
+  <action name="actionCurveEndDistanceCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_points/point_curveEndDist.png</normaloff>:/app/icons/toolbars/make_points/point_curveEndDist.png</iconset>
+   </property>
+   <property name="text">
+    <string>Curve End and Distance</string>
+   </property>
+  </action>
+  <action name="actionPointProjectionOnCurveCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_points/point_pointCurveProj.png</normaloff>:/app/icons/toolbars/make_points/point_pointCurveProj.png</iconset>
+   </property>
+   <property name="text">
+    <string>Point Projection On Curve</string>
+   </property>
+  </action>
+  <action name="actionTwoCurveIntersectPointCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_points/point_curveCurveInt.png</normaloff>:/app/icons/toolbars/make_points/point_curveCurveInt.png</iconset>
+   </property>
+   <property name="text">
+    <string>Two Curve Intersection</string>
+   </property>
+  </action>
+  <action name="actionPointProjectionOnSurfaceCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_points/point_pointSurfProj.png</normaloff>:/app/icons/toolbars/make_points/point_pointSurfProj.png</iconset>
+   </property>
+   <property name="text">
+    <string>Point Projection On Surface</string>
+   </property>
+  </action>
+  <action name="actionCurveIntersectSurfaceCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_points/point_curveSurfInt.png</normaloff>:/app/icons/toolbars/make_points/point_curveSurfInt.png</iconset>
+   </property>
+   <property name="text">
+    <string>Intersection Curve And Surface</string>
+   </property>
+  </action>
+  <action name="actionClosedSurfaceSolidCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_solids/solid_closedSurf.png</normaloff>:/app/icons/toolbars/make_solids/solid_closedSurf.png</iconset>
+   </property>
+   <property name="text">
+    <string>Closed Surface Solid</string>
+   </property>
+   <property name="toolTip">
+    <string>Closed Surface Solid</string>
+   </property>
+  </action>
+  <action name="actionGUIShowDatums">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>ShowDatums</string>
+   </property>
+  </action>
+  <action name="actionLicense">
+   <property name="text">
+    <string>License</string>
+   </property>
+  </action>
+  <action name="actionBridgeCurveCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_edges/edge_bridgeEdge.png</normaloff>:/app/icons/toolbars/make_edges/edge_bridgeEdge.png</iconset>
+   </property>
+   <property name="text">
+    <string>Bridge Curve</string>
+   </property>
+  </action>
+  <action name="actionCurveFromSurfaceCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_edges/edge_fromSurf.png</normaloff>:/app/icons/toolbars/make_edges/edge_fromSurf.png</iconset>
+   </property>
+   <property name="text">
+    <string>Curve From Surface</string>
+   </property>
+  </action>
+  <action name="actionBridgeSurfaceCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_faces/face_bridgeSurf.png</normaloff>:/app/icons/toolbars/make_faces/face_bridgeSurf.png</iconset>
+   </property>
+   <property name="text">
+    <string>Bridge Surface</string>
+   </property>
+  </action>
+  <action name="actionSurfaceFromSolidCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_faces/face_fromSolid.png</normaloff>:/app/icons/toolbars/make_faces/face_fromSolid.png</iconset>
+   </property>
+   <property name="text">
+    <string>Surface From Solid</string>
+   </property>
+  </action>
+  <action name="actionReferencePointCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_datum/datum_point.png</normaloff>:/app/icons/toolbars/make_datum/datum_point.png</iconset>
+   </property>
+   <property name="text">
+    <string>Reference Point</string>
+   </property>
+  </action>
+  <action name="actionReferenceLineCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_datum/datum_line.png</normaloff>:/app/icons/toolbars/make_datum/datum_line.png</iconset>
+   </property>
+   <property name="text">
+    <string>Reference Line</string>
+   </property>
+  </action>
+  <action name="actionReferencePlaneCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_datum/datum_plane.png</normaloff>:/app/icons/toolbars/make_datum/datum_plane.png</iconset>
+   </property>
+   <property name="text">
+    <string>Reference Plane</string>
+   </property>
+  </action>
+  <action name="actionSplitByMiddlePositionLineCreate">
+   <property name="text">
+    <string>Split By Middle Position Line</string>
+   </property>
+   <property name="toolTip">
+    <string>Split By Middle Position Line</string>
+   </property>
+  </action>
+  <action name="actionImprintSolidCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_features/feature_imprintSolid.png</normaloff>:/app/icons/toolbars/make_features/feature_imprintSolid.png</iconset>
+   </property>
+   <property name="text">
+    <string>Imprint Solid</string>
+   </property>
+   <property name="toolTip">
+    <string>Imprint Solid Create</string>
+   </property>
+  </action>
+  <action name="actionSketchHyperbolaArc">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/sketch/sketch_hyperbola.png</normaloff>:/app/icons/toolbars/sketch/sketch_hyperbola.png</iconset>
+   </property>
+   <property name="text">
+    <string>Hyperbola</string>
+   </property>
+  </action>
+  <action name="actionSketchParabolaArc">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/sketch/sketch_parabola.png</normaloff>:/app/icons/toolbars/sketch/sketch_parabola.png</iconset>
+   </property>
+   <property name="text">
+    <string>Parabola</string>
+   </property>
+  </action>
+  <action name="actionCompoundAppendShapeCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/edit/edit_addMember.png</normaloff>:/app/icons/toolbars/edit/edit_addMember.png</iconset>
+   </property>
+   <property name="text">
+    <string>Append From Compound</string>
+   </property>
+   <property name="toolTip">
+    <string>Append From Compound</string>
+   </property>
+  </action>
+  <action name="actionCompoundRemoveShapeCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/edit/edit_removeMember.png</normaloff>:/app/icons/toolbars/edit/edit_removeMember.png</iconset>
+   </property>
+   <property name="text">
+    <string>Remove From Compound</string>
+   </property>
+   <property name="toolTip">
+    <string>Remove From Compound</string>
+   </property>
+  </action>
+  <action name="actionUndo">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/operate/undo.png</normaloff>:/app/icons/toolbars/operate/undo.png</iconset>
+   </property>
+   <property name="text">
+    <string>Undo</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Z</string>
+   </property>
+  </action>
+  <action name="actionRedo">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/operate/redo.png</normaloff>:/app/icons/toolbars/operate/redo.png</iconset>
+   </property>
+   <property name="text">
+    <string>Redo</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Y</string>
+   </property>
+  </action>
+  <action name="actionLanguage">
+   <property name="text">
+    <string>Language</string>
+   </property>
+  </action>
+  <action name="actionMultiSectionSurfaceCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_faces/face_multiSecSurf.png</normaloff>:/app/icons/toolbars/make_faces/face_multiSecSurf.png</iconset>
+   </property>
+   <property name="text">
+    <string>Multi-Sections Surface</string>
+   </property>
+  </action>
+  <action name="actionMultiSectionSolidCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_solids/solid_multiSecSolid.png</normaloff>:/app/icons/toolbars/make_solids/solid_multiSecSolid.png</iconset>
+   </property>
+   <property name="text">
+    <string>Multi-Sections Solid</string>
+   </property>
+  </action>
+  <action name="actionSaveProject">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/file/file_saveProject.png</normaloff>:/app/icons/toolbars/file/file_saveProject.png</iconset>
+   </property>
+   <property name="text">
+    <string>Save Project</string>
+   </property>
+  </action>
+  <action name="actionDistance">
+   <property name="text">
+    <string>Distance</string>
+   </property>
+  </action>
+  <action name="actionTransformCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_transform/transform_translate.png</normaloff>:/app/icons/toolbars/make_transform/transform_translate.png</iconset>
+   </property>
+   <property name="text">
+    <string>Translate</string>
+   </property>
+   <property name="iconText">
+    <string>Translatation</string>
+   </property>
+  </action>
+  <action name="actionRotateCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_transform/transform_rotate.png</normaloff>:/app/icons/toolbars/make_transform/transform_rotate.png</iconset>
+   </property>
+   <property name="text">
+    <string>Rotate</string>
+   </property>
+  </action>
+  <action name="actionScaleCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_transform/transform_scale.png</normaloff>:/app/icons/toolbars/make_transform/transform_scale.png</iconset>
+   </property>
+   <property name="text">
+    <string>Scale</string>
+   </property>
+  </action>
+  <action name="actionOpenProject">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/file/file_openProject.png</normaloff>:/app/icons/toolbars/file/file_openProject.png</iconset>
+   </property>
+   <property name="text">
+    <string>Open Project</string>
+   </property>
+  </action>
+  <action name="actionCurveSplitterCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/edit/edit_splitCurve.png</normaloff>:/app/icons/toolbars/edit/edit_splitCurve.png</iconset>
+   </property>
+   <property name="text">
+    <string>Split Curve</string>
+   </property>
+  </action>
+  <action name="actionSurfaceSplitterCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/edit/edit_splitSurf.png</normaloff>:/app/icons/toolbars/edit/edit_splitSurf.png</iconset>
+   </property>
+   <property name="text">
+    <string>Split Surface</string>
+   </property>
+  </action>
+  <action name="actionSolidSplitterCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/edit/edit_splitSolid.png</normaloff>:/app/icons/toolbars/edit/edit_splitSolid.png</iconset>
+   </property>
+   <property name="text">
+    <string>Split Solid</string>
+   </property>
+  </action>
+  <action name="actionBSplineByThroughPointsCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_edges/edge_bspline.png</normaloff>:/app/icons/toolbars/make_edges/edge_bspline.png</iconset>
+   </property>
+   <property name="text">
+    <string>BSpline</string>
+   </property>
+  </action>
+  <action name="actionStiffenerCreate">
+   <property name="text">
+    <string>Stiffener</string>
+   </property>
+  </action>
+  <action name="actionMirrorCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_transform/mirror.png</normaloff>:/app/icons/toolbars/make_transform/mirror.png</iconset>
+   </property>
+   <property name="text">
+    <string>Mirror</string>
+   </property>
+  </action>
+  <action name="actionRectangularPatternCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_transform/rect_pattern.png</normaloff>:/app/icons/toolbars/make_transform/rect_pattern.png</iconset>
+   </property>
+   <property name="text">
+    <string>Rectangular Pattern</string>
+   </property>
+  </action>
+  <action name="actionCircularPatternCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_transform/circular_pattern.png</normaloff>:/app/icons/toolbars/make_transform/circular_pattern.png</iconset>
+   </property>
+   <property name="text">
+    <string>Circular Pattern</string>
+   </property>
+  </action>
+  <action name="actionInteractionPointCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_points/point_interactive.png</normaloff>:/app/icons/toolbars/make_points/point_interactive.png</iconset>
+   </property>
+   <property name="text">
+    <string>Interaction Point</string>
+   </property>
+  </action>
+  <action name="actionComponentCreate">
+   <property name="text">
+    <string>Create Component</string>
+   </property>
+   <property name="toolTip">
+    <string>Create Component</string>
+   </property>
+  </action>
+  <action name="actionHideFaces">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/operate/hide_face.png</normaloff>:/app/icons/toolbars/operate/hide_face.png</iconset>
+   </property>
+   <property name="text">
+    <string>Hide Faces</string>
+   </property>
+  </action>
+  <action name="actionNBodyUniteCreate">
+   <property name="icon">
+    <iconset resource="../Resource/resources.qrc">
+     <normaloff>:/app/icons/toolbars/make_boolean/boolean_n_body_unite.png</normaloff>:/app/icons/toolbars/make_boolean/boolean_n_body_unite.png</iconset>
+   </property>
+   <property name="text">
+    <string>N-Body Unite</string>
+   </property>
+  </action>
+  <action name="actionAIAgent">
+   <property name="text">
+    <string>Show/Hide Agent</string>
+   </property>
+  </action>
+ </widget>
+ <resources>
+  <include location="../Resource/resources.qrc"/>
+  <include location="../Resource/resources.qrc"/>
+ </resources>
+ <connections/>
+</ui>

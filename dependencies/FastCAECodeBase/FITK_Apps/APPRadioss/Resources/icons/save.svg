@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="_图层_1" data-name="图层_1" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 32 32">
+  <!-- Generator: Adobe Illustrator 29.2.1, SVG Export Plug-In . SVG Version: 2.1.0 Build 116)  -->
+  <defs>
+    <style>
+      .st0, .st1 {
+        fill: none;
+        stroke: #4d82b6;
+        stroke-linejoin: round;
+        stroke-width: 2px;
+      }
+
+      .st2, .st3 {
+        fill: #4d82b6;
+      }
+
+      .st1 {
+        stroke-linecap: square;
+      }
+
+      .st3, .st4 {
+        display: none;
+      }
+
+      .st4 {
+        fill: #657386;
+      }
+    </style>
+  </defs>
+  <path class="st4" d="M25.04,5v9.59h2V5c0-1.15-.81-1.93-2-1.93H5.13c-1.19,0-2,.78-2,1.93v21.07c0,1.15.81,1.93,2,1.93h13.9v-1.93H5.13V5h2"/>
+  <rect class="st1" x="9.09" y="4.06" width="14" height="8.5"/>
+  <polygon class="st3" points="27.55 19.93 23.37 15.9 22.01 17.26 25.16 20.3 11.09 20.3 11.09 22.24 25.16 22.24 22.01 25.28 23.42 26.64 27.59 22.61 29 21.25 27.55 19.93"/>
+  <rect class="st2" x="18" y="6" width="2" height="4"/>
+  <rect class="st0" x="5" y="4" width="22" height="23" rx="1.01" ry="1.01"/>
+  <rect class="st2" x="10" y="21" width="12" height="2"/>
+</svg>

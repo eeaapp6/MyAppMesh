@@ -1,0 +1,20 @@
+<RCC>
+    <qresource prefix="/">
+        <file>translations/Translate_GUIWidget_CN.qm</file>
+        <file>translations/Translate_GUIWidget_EN.qm</file>
+        <file>translations/Translate_GUIFrame_CN.qm</file>
+        <file>translations/Translate_GUIFrame_EN.qm</file>
+        <file>translations/Translate_GUIDialog_CN.qm</file>
+        <file>translations/Translate_GUIDialog_EN.qm</file>
+        <file>translations/Translate_OperatorsModel_CN.qm</file>
+        <file>translations/Translate_OperatorsModel_EN.qm</file>
+        <file>translations/Translate_OperatorsGUI_CN.qm</file>
+        <file>translations/Translate_OperatorsGUI_EN.qm</file>
+        <file>translations/Translate_FITKGeoCompOCC_CN.qm</file>
+        <file>translations/Translate_FITKGeoCompOCC_EN.qm</file>
+        <file>translations/Translate_FITKCompMessageWidget_CN.qm</file>
+        <file>translations/Translate_FITKCompMessageWidget_EN.qm</file>
+        <file>translations/Translate_FITKRenderWindowOCC_CN.qm</file>
+        <file>translations/Translate_FITKRenderWindowOCC_EN.qm</file>
+    </qresource>
+</RCC>

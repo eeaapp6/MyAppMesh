@@ -1,0 +1,18 @@
+﻿为提高代码库下载与上传效率，节约云端硬盘空间，FastCAE将第三方库打包存储，代码库克隆同步之后需手动解压
+这里要求解压后的目录结构如下：
+
+XXXX/Tools/ 
+  |-Win64/（Windows平台）
+  |   |-cgns/
+  |   |-OCC/
+  |   |-VTK/
+  |   |-SAERibbon/
+  |   |-hdf5/
+  ………………
+  |-Linux64/（Linux平台） 
+  |   |-cgns/
+  |   |-OCC/
+  |   |-VTK/
+  |   |-SAERibbon/
+  |   |-hdf5/
+  ………………

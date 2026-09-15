@@ -1,0 +1,9 @@
+.vs
+*.bat
+*.sln
+.*stash
+*.vcxproj
+*.filters
+*.user
+/generate
+/output
