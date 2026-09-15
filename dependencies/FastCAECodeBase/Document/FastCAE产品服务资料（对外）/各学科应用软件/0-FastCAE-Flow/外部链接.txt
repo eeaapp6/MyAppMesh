@@ -1,0 +1,20 @@
+FastCAE—Flow流体软件功能介绍
+    https://mp.weixin.qq.com/s/GoL04GNg7W4AC4mJjCXmnw
+
+【案例分享】FastCAE—Flow流体软件在高铁场景中的应用（附源码下载网址）
+    https://mp.weixin.qq.com/s/g48xpKNBlYJIjFqmjJuBCQ
+
+FastCAE—Flow流体软件网格划分模块功能介绍（多区域网格划分  DFCD）
+    https://mp.weixin.qq.com/s/uVofmdTKf6gPSfs7sYJLWw
+
+FastCAE—Flow流体软件在管道（内流场）场景中的应用
+    https://mp.weixin.qq.com/s/ZTPe6L57GgTGwY2RAE2UtQ
+
+【应用介绍】FastCAE-PHengLEI流体仿真 
+    https://mp.weixin.qq.com/s/dfspg-M0lM-GcgOp749slg
+
+【FastCAE—Flow案例分享】高效的亿级网格划分过程（DFCD）
+    https://mp.weixin.qq.com/s/J8wt7JVBt5iFE-CH2MtnLw
+
+【FastCAEFlow案例分享】软件在汽车场景中的应用
+    https://mp.weixin.qq.com/s/g7y15XLB5BAysKjDJc2qsw

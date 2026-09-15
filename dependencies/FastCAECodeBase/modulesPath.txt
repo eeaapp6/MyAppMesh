@@ -1,0 +1,2 @@
+https://atomgit.com/fastcaecodebase/FITKAIAssistant.git
+https://atomgit.com/fastcaecodebase/FITKHttpPythonDriver.git

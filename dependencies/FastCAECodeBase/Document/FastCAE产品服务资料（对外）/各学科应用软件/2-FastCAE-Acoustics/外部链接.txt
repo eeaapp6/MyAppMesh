@@ -1,0 +1,18 @@
+FastCAE-Acoustics声振耦合分析软件功能介绍
+    https://mp.weixin.qq.com/s/StQ_hXKf93R4GUyx9OuQwQ
+
+FastCAE-Acoustics案例分享-采用吸声技术降低船舶舱室噪声 
+    https://mp.weixin.qq.com/s/9GCfcZUkmfN7jmakjOHvIQ
+
+【案例分享】基于FastCAE-Acoustics软件对车门进行噪声预测
+    https://mp.weixin.qq.com/s/xqEJv9OA1AWUoKt1yFaJmQ
+
+【FastCAE-Acoustics案例分享】吸声技术和阻尼技术对船舶舱室噪声降噪效果对比
+    https://mp.weixin.qq.com/s/By2Pm_kboJLxPHXAQsSrfA
+
+【FastCAE-Acoustics案例分享】舱室隔声性能分析
+    https://mp.weixin.qq.com/s/K8pPBYVEXD4pPJekn3Pm6A
+
+【FastCAE-Acoustics案例分享】SUBOFF模型在深海工况下进行噪声分析
+      https://mp.weixin.qq.com/s/eQ9cwqfQPDXyASwxSYOBsg
+

@@ -1,0 +1,8 @@
+FastCAE—Structure通用结构软件功能介绍
+    https://mp.weixin.qq.com/s/ZJAn8Q0TEZFjJFV7oGS2PQ
+
+FastCAE—Structure非线性静力分析实例介绍
+    https://mp.weixin.qq.com/s/ihAbrZB678kdl6umC4nEsg
+
+内核革新！FastCAE迎来ACIS几何引擎强力加持
+   https://mp.weixin.qq.com/s/lXZfjMFtrQsxEe60i3fBZQ
