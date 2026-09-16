@@ -5,9 +5,9 @@
 The supported Windows x64 Debug baseline is:
 
 - Visual Studio 2017 with the MSVC 14.16.27023/v141 x64 toolset.
-- Windows 10 SDK 10.0.17763.0. On the validated host it is installed under `C:\Windows Kits\10` and is selected successfully by the VS2017 environment script.
+- Windows 10 SDK 10.0.17763.0, selected successfully by the VS2017 environment script.
 - CMake 3.16 or newer. Project files must not depend on behavior unique to the currently installed CMake 4.1.0-rc3.
-- Qt 5.14.2 `msvc2017_64`. Set `QT_ROOT` to its installation directory; the example below falls back to the historical FastCAE location when the variable is absent.
+- Qt 5.14.2 `msvc2017_64`. Set `QT_ROOT` to its installation directory or place its `qmake` on `PATH`.
 - FastCAE/FITK sources at `dependencies/FastCAECodeBase`.
 - The restored dependency lock at `dependencies/FastCAECodeBase/Tools`.
 
@@ -18,12 +18,13 @@ The Tools package has been checked for OCC 7.4.0 beta, VTK 9.4.2, HDF5 1.14.0, C
 Run these commands from the repository root in PowerShell:
 
 ```powershell
-$vcvars = 'C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat'
-cmd.exe /d /s /c ('call "' + $vcvars + '" x64 10.0.17763.0 && where cl && where rc')
+if (-not $env:VS2017_VCVARS) { throw 'Set VS2017_VCVARS to the VS2017 vcvarsall.bat file.' }
+cmd.exe /d /s /c ('call "' + $env:VS2017_VCVARS + '" x64 10.0.17763.0 && where cl && where rc')
 
 $repoRoot = (Resolve-Path '.').Path
 $toolsDir = Join-Path $repoRoot 'dependencies\FastCAECodeBase\Tools'
-$qtDir = if ($env:QT_ROOT) { $env:QT_ROOT } else { 'C:\Qt\Qt5.14.2\5.14.2\msvc2017_64' }
+if (-not $env:QT_ROOT) { throw 'Set QT_ROOT to the Qt 5.14.2 msvc2017_64 directory.' }
+$qtDir = $env:QT_ROOT
 
 Test-Path "$toolsDir\cmake\OCCConfig.cmake"
 Test-Path "$toolsDir\Win64\VTK942\bind\vtkCommonCore-9.4d.dll"
@@ -44,11 +45,7 @@ Test-Path "$repoRoot\output\bin_d\FITKCore.lib"
 Expected results are ten `True` values followed by Gmsh `4.5.4`, Python `3.7.0`, and Qt `5.14.2`. The copied `output/` directory is a local, ignored dependency source: only explicitly allowlisted FITK base artifacts may be used; original APPMesh business binaries in that directory must never be linked. Also verify that a Windows SDK is installed before configuring:
 
 ```powershell
-$sdkCandidates = @(
-  (Join-Path ${env:ProgramFiles(x86)} 'Windows Kits\10\Include\10.0.17763.0'),
-  'C:\Windows Kits\10\Include\10.0.17763.0'
-)
-$sdkCandidates | Where-Object { Test-Path $_ }
+cmd.exe /d /s /c ('call "' + $env:VS2017_VCVARS + '" x64 10.0.17763.0 && if exist "%WindowsSdkDir%Include\10.0.17763.0" echo SDK ready')
 ```
 
 The environment command must resolve `cl.exe` and `rc.exe`, and the candidate check must print the installed `10.0.17763.0` include directory.
@@ -61,7 +58,8 @@ After T001 creates the root `CMakeLists.txt`, configure Debug without relying on
 $repoRoot = (Resolve-Path '.').Path
 $toolsDir = (Join-Path $repoRoot 'dependencies\FastCAECodeBase\Tools').Replace('\', '/')
 $fitkOutputDir = (Join-Path $repoRoot 'output').Replace('\', '/')
-$qtRoot = if ($env:QT_ROOT) { $env:QT_ROOT } else { 'C:\Qt\Qt5.14.2\5.14.2\msvc2017_64' }
+$qtRoot = $env:QT_ROOT
+if (-not $qtRoot) { throw 'Set QT_ROOT before configuring.' }
 $qt5Dir = (Join-Path $qtRoot 'lib\cmake\Qt5').Replace('\', '/')
 $buildDir = Join-Path $repoRoot 'build\vs2017-x64-debug'
 
@@ -95,7 +93,7 @@ Run `ctest --test-dir build/vs2017-x64-debug -C Debug -R "t001.bootstrap|t004.me
 
 ## T041 real FITK base validation
 
-T041 uses only the audited Debug `FITKCore` and `FITKAppFramework` library/DLL pairs from `output/bin_d`. The production process constructs `FITKApplication`; the local registration adapter is test-only. Concrete ModelData, FITKRenderWindowVTK/FITKAdaptor GraphData, FITKGeoCommandList operations, HDF5/IO adapters, Python wrappers, formal GUI and plugins remain later-task boundaries and are not loaded from the copied original APPMesh output.
+T041 uses only the audited Debug `FITKCore` and `FITKAppFramework` library/DLL pairs from `output/bin_d`. The production process constructs `FITKApplication`; the local registration adapter is test-only. T005 adds the source-built `ApplicationRuntime` without loading an original APPMesh ModelData binary. FITKRenderWindowVTK/FITKAdaptor GraphData, FITKGeoCommandList operations, HDF5/IO adapters, Python wrappers, formal GUI and plugins remain later-task boundaries and are not loaded from the copied original APPMesh output.
 
 Run the focused lifecycle and dependency suite:
 
@@ -103,13 +101,71 @@ Run the focused lifecycle and dependency suite:
 ctest --test-dir build\vs2017-x64-debug -C Debug -R "t041|fitk|t004" --output-on-failure
 
 $env:QT_QPA_PLATFORM = 'offscreen'
-$env:Path = "C:\Qt\Qt5.14.2\5.14.2\msvc2017_64\bin;$PWD\build\vs2017-x64-debug\runtime\Debug;$env:Path"
+$env:Path = "$env:QT_ROOT\bin;$PWD\build\vs2017-x64-debug\runtime\Debug;$env:Path"
 build\vs2017-x64-debug\runtime\Debug\APPMesh.exe --smoke-test
 ```
 
 The validated result is 5/5 focused tests and a zero-exit smoke process. Its log begins with `fitk.application`, reaches the event loop only after all mapped stages, and then reports operators, initializer, plugins, pre-window/signals, window, Python, components, global data and FITK runtime shutdown in reverse dependency order. The final banner includes `adapter=FITKFastCAERegistrationAdapter`, `FITKAppFramework=1.0.7` and `FITKCore=1.0.4`.
 
 Use the VS2017 `dumpbin /dependents` command on `APPMesh.exe`, `output\bin_d\FITKAppFramework.dll` and `output\bin_d\FITKCore.dll`. `APPMesh.exe` must contain `FITKAppFramework.dll`, `FITKCore.dll`, `hdf5_D.dll`, `Qt5Widgetsd.dll` and `Qt5Cored.dll`; the framework transitively requires `Qt5Guid.dll` and `Qt5Networkd.dll`. Release Qt/HDF5 names and original APPMesh business DLL names must be absent.
+
+## T005 ModelData foundation
+
+Run the focused object/runtime suite:
+
+```powershell
+ctest --test-dir build\vs2017-x64-debug -C Debug -R "t005|t004|t041" --output-on-failure
+```
+
+The T005 Debug baseline contained 16 tests: the original 12 lifecycle, dependency and FITK checks plus four T005 tests for common object fields, ID/name/parent indexes, deterministic concurrency and `GlobalDataFactory` integration. After T006-T009, the complete Debug suite contains 23 tests. The original T005 concurrency fixture starts eight threads from a condition-variable gate, creates 800 same-base-name objects, performs concurrent snapshot queries and renames, deletes independent leaves, and finishes with `validateIndexes()`.
+
+Expected T005 behavior: object ID zero is invalid; IDs are monotonic and not reused; lookup and uniqueness are case-insensitive while display case is preserved; duplicate names use `Name (2)`, `Name (3)`, and later suffixes; queries return value snapshots; parents with children cannot be removed; and failed operations leave all existing indexes unchanged.
+
+## T006/T007 ModelData validation
+
+Run the focused geometry and mesh value-model tests:
+
+```powershell
+cmake --build build\vs2017-x64-debug --config Debug --target appmesh_model
+ctest --test-dir build\vs2017-x64-debug -C Debug -R "t006|t007" --output-on-failure
+```
+
+The focused result is 2/2 tests. T006 verifies staged Geometry payload validation, hidden reserve/publish, rollback/cancel, manager-only create/delete, unique names, grouping, display state, snapshots and index cleanup. T007 verifies frozen IDs and cell arity, dimension compatibility, node/element/set references, source-Geometry type checking and deterministic logical diagnostic paths. T008 adds `MeshManager`, creator lifecycle and Geometry-Mesh association indexes; T009 provides the systematic validation below.
+
+## T009 ModelData concurrency and failure validation
+
+Run the four focused T009 executables in Debug:
+
+```powershell
+ctest --test-dir build\vs2017-x64-debug -C Debug -R "^t009" --output-on-failure
+```
+
+The expected result is 4/4 tests. They cover Runtime reservation/publish/cancel and ObjectId boundaries, concurrent Geometry create/query/delete, the frozen geometry/mesh validation matrix, creator failures and unregister races, bidirectional Geometry-Mesh associations, Runtime delete rollback, deterministic diagnostics and long-running snapshot/index reads.
+
+The matrix test has a 30-second CTest timeout. The three concurrency/protocol executables have 60-second timeouts so a lock-order regression terminates the whole test process and is reported as a timeout; worker threads are never detached or forcibly terminated. Their normal Debug runtime is substantially below those limits.
+
+Repeat the critical concurrency tests at least five times when changing ModelData locking or lifecycle code:
+
+```powershell
+ctest --test-dir build\vs2017-x64-debug -C Debug `
+  -R "^t009\.(runtime-protocol|geometry-concurrency|mesh-manager-concurrency)$" `
+  --repeat until-fail:5 --output-on-failure
+```
+
+The verified T009 fixture uses four Geometry writers creating 120 objects, four Mesh writers creating 80 associated meshes, bounded snapshot loops, condition-variable start gates and a condition-controlled creator/removal checkpoint. Every phase ends with the available Runtime, GeometryManager and MeshManager index validators. The T009 baseline was 23/23; after T010/T011 the complete Debug suite is 25/25. `cmake --build build\vs2017-x64-debug --config Release` must return a nonzero exit code under the Debug-only policy.
+
+## T010/T011 GUI shell and model widgets
+
+Build and run the focused offscreen GUI checks in Debug:
+
+```powershell
+cmake --build build\vs2017-x64-debug --config Debug
+ctest --test-dir build\vs2017-x64-debug -C Debug -R "t010|t011" --output-on-failure
+```
+
+The expected result is 2/2 tests. T010 verifies main-window creation and destruction, central viewport/model-tree/console hosts, Qt widget injection and replacement ownership, dock visibility, the no-VTK placeholder, and failure isolation. T011 verifies empty and populated Runtime snapshots, stable ObjectId/type roles, hierarchy refresh, mutation routing through Runtime/GeometryManager/MeshManager, stale-node removal, invalid-refresh preservation, console levels, line limits, and queued worker-thread messages.
+
+The current desktop shell deliberately uses a Qt menu/toolbar command area and a replaceable QWidget viewport placeholder. It does not claim the final SARibbon adapter, VTK/GraphData rendering, or picking. T013 retains the complete GUI/VTK five-second heartbeat test, and T026 retains the formal VTK viewport and GraphData integration.
 
 ## UI responsiveness heartbeat
 

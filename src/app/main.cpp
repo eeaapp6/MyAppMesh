@@ -11,6 +11,12 @@
 #include "PyRegister.h"
 #include "SignalProcessor.h"
 #include "SystemChecker.h"
+#include "gui/GUIFrame/MainWindow.h"
+#include "gui/GUIWidget/ConsoleWidget.h"
+#include "gui/GUIWidget/ModelTree.h"
+#include "model/ModelData/ApplicationRuntime.h"
+#include "model/ModelData/GeometryManager.h"
+#include "model/ModelData/MeshManager.h"
 
 #include "FITK_Kernel/FITKAppFramework/FITKAppFramework.h"
 #include "FITK_Kernel/FITKAppFramework/FITKAppFrameworkAPI.h"
@@ -21,18 +27,16 @@
 #include <QLibraryInfo>
 #include <QStandardPaths>
 #include <QTemporaryDir>
+#include <QPointer>
 
 #include <hdf5.h>
 
 #include <iostream>
 #include <memory>
+#include <stdexcept>
 
 namespace
 {
-class RuntimeService final : public AppMesh::App::ManagedService
-{
-};
-
 class ApplicationComponent final : public AppMesh::App::ManagedService
 {
 };
@@ -143,7 +147,10 @@ int main(int argc, char* argv[])
 
     auto result = globalData.add(
         {globalMapping->registrationKey,
-         [] { return std::unique_ptr<AppMesh::App::ManagedService>(new RuntimeService); }});
+         [] {
+             return std::unique_ptr<AppMesh::App::ManagedService>(
+                 new AppMesh::Model::ApplicationRuntime);
+         }});
     if (!result.succeeded())
     {
         printDiagnostics(result);
@@ -161,7 +168,54 @@ int main(int argc, char* argv[])
     }
 
     AppMesh::App::PyRegister python(false);
-    AppMesh::App::MainWindowGenerator mainWindow({}, !smokeTest);
+    std::unique_ptr<AppMesh::Model::GeometryManager> geometryManager;
+    std::unique_ptr<AppMesh::Model::MeshManager> meshManager;
+    const QString runtimeKey = globalMapping->registrationKey;
+    AppMesh::App::MainWindowGenerator mainWindow(
+        [&globalData, &geometryManager, &meshManager, runtimeKey] {
+            auto* runtime = dynamic_cast<AppMesh::Model::ApplicationRuntime*>(
+                globalData.instance(runtimeKey));
+            if (!runtime)
+            {
+                throw std::runtime_error(
+                    "ApplicationRuntime is unavailable during GUI composition.");
+            }
+
+            // A recreated window must release the previous typed managers in
+            // reverse dependency order after its widgets have already gone.
+            meshManager.reset();
+            geometryManager.reset();
+
+            auto geometry = std::make_unique<AppMesh::Model::GeometryManager>(*runtime);
+            auto mesh = std::make_unique<AppMesh::Model::MeshManager>(*runtime, *geometry);
+            auto window = std::make_unique<AppMesh::GUIFrame::MainWindow>();
+            auto tree = std::make_unique<AppMesh::Gui::ModelTree>();
+            auto console = std::make_unique<AppMesh::Gui::ConsoleWidget>();
+            const QPointer<AppMesh::Gui::ConsoleWidget> consoleGuard(console.get());
+            tree->setDiagnosticHandler(
+                [consoleGuard](const AppMesh::Common::Diagnostic& diagnostic) {
+                    if (consoleGuard)
+                    {
+                        consoleGuard->appendDiagnostic(diagnostic);
+                    }
+                });
+            const auto bindResult = tree->bind(runtime, geometry.get(), mesh.get());
+            if (!bindResult.succeeded() || !window->setModelTreeWidget(tree.get()))
+            {
+                throw std::runtime_error("The main-window widgets could not be assembled.");
+            }
+            tree.release();
+            if (!window->setConsoleWidget(console.get()))
+            {
+                throw std::runtime_error("The console widget could not be assembled.");
+            }
+            console.release();
+
+            geometryManager = std::move(geometry);
+            meshManager = std::move(mesh);
+            return std::unique_ptr<QWidget>(window.release());
+        },
+        !smokeTest);
     AppMesh::App::SignalProcessor signalProcessor(false);
     AppMesh::App::PreWindowInitializer preWindow(false);
     AppMesh::App::DisabledLifecycleBoundary plugins(QStringLiteral("FastCAE plugins"));

@@ -22,7 +22,7 @@ APPMesh will be rebuilt as a FastCAE/FITK desktop application while preserving t
 
 **Testing**: CTest-driven C++ unit tests, plugin and extension contract tests, FastCAE/VTK integration tests, fixture-based HDF5 compatibility tests, and deployment smoke tests.
 
-**Target Platform**: Windows x64 desktop in Debug configuration only. The compatibility baseline is Visual Studio 2017/v141, Qt 5.14.2 `msvc2017_64`, and matching Debug libraries under `Tools/Win64`. The FastCAE scripts request Windows SDK 10.0.17763.0; T001 validated that SDK under `C:\Windows Kits\10` through `vcvarsall.bat`. Non-Debug configurations are permanently unsupported.
+**Target Platform**: Windows x64 desktop in Debug configuration only. The compatibility baseline is Visual Studio 2017/v141, Qt 5.14.2 `msvc2017_64`, and matching Debug libraries under `Tools/Win64`. The FastCAE scripts request Windows SDK 10.0.17763.0 through `vcvarsall.bat`; installation roots are supplied by environment variables or tool discovery. Non-Debug configurations are permanently unsupported.
 
 **Project Type**: Desktop CAE application with dynamically loaded plugins and optional automation services.
 
@@ -39,7 +39,7 @@ The following inventory was verified against `dependencies/FastCAECodeBase/Tools
 | Area | Pinned selection | Repository/host evidence | Status |
 |---|---|---|---|
 | Compiler ABI | Visual Studio 2017, MSVC 14.16.27023/v141, x64 | FastCAE build scripts and installed VS2017 toolset | Ready |
-| Windows SDK | 10.0.17763.0 compatibility target | FastCAE build scripts and T001 Debug build | Ready under `C:\Windows Kits\10` |
+| Windows SDK | 10.0.17763.0 compatibility target | FastCAE build scripts and T001 Debug build | Ready through the VS2017 environment |
 | Build | CMake minimum 3.16 | FastCAE module `CMakeLists.txt` files | Ready; T001 uses stable CMake 3.30.5 and does not rely on host CMake 4.1.0-rc3-only behavior |
 | Qt | Qt 5.14.2 `msvc2017_64` | Local `qmake -query QT_VERSION` and FastCAE scripts | Ready |
 | FastCAE/FITK | Repository-pinned sources and matching shared-library layout | `FITK_Kernel`, `FITK_Interface`, `FITK_Component` | Ready; T001 configure/build validation passed |
@@ -90,7 +90,7 @@ src/
 ├── app/SignalProcessor.{h,cpp}
 ├── app/GlobalDataFactory.{h,cpp}
 ├── app/ComponentFactory.{h,cpp}
-├── model/ModelData/                 # GeometryManager, MeshManager, MeshData, MeshKernel
+├── model/ModelData/                 # ApplicationRuntime and common object/index foundation
 ├── gui/GUIFrame/                    # main frame, ribbon, console, model-tree host
 ├── gui/GUIWidget/                   # tree models and reusable business widgets
 ├── gui/GUIDialog/                   # work directory, generator and project dialogs
@@ -153,6 +153,12 @@ Dependency direction is strictly `FastCAE base -> FastCAE components -> APPMesh 
 - `HDF5IO`: creates/checks the HDF5 context and Version metadata, then dispatches read/write to currently loaded plugins.
 - `PythonInterface`/`PyRegister`: registers controlled operations and dispatches through the same operator/task path; stable external schema and public error codes are future-version work.
 
+### T005 common object runtime
+
+`ApplicationRuntime` is the single owner of common `DataObject` instances and is registered as the production `FITKGlobalData` service through `GlobalDataFactory`. `ObjectId` is `quint64`; zero is invalid, allocation is monotonic within one runtime, deleted IDs are never reused, and exhaustion is diagnosed without wraparound. Objects are non-copyable and non-movable, and queries return value snapshots so deletion cannot leave a caller-held pointer dangling.
+
+Names are trimmed for display and indexed with `QString::toCaseFolded()` for Windows-compatible case-insensitive lookup. A conflict uses the deterministic suffixes `Name (2)`, `Name (3)`, and so on; deletion releases the name index without rewinding IDs. Parent and child indexes are updated together, cycles and missing parents are rejected, and a parent with children cannot be removed. `QReadWriteLock` permits concurrent snapshot queries while serializing every multi-index mutation in one write-locked operation. T006 and T007 will extend this foundation with concrete geometry and mesh types; they are not part of T005.
+
 ## Application Initialization Order
 
 T004 implements the composition root in this exact order:
@@ -176,7 +182,7 @@ Every stage returns structured diagnostics containing a stage, code, message and
 
 T041 makes the production composition root a real `FITKApplication` and inserts `fitk.application` before command-line parsing. `FITKFastCAERegistrationAdapter` calls the public `regGlobalDataFactory` and `regComponentsFactory` APIs, verifies the real global-data, component, plugin, signal, thread-pool and operator-repository managers, and rejects duplicate keys before FITK's void registration calls can overwrite ownership. The canonical mapped order is `FITKApplication -> settings/system check -> global data/ModelData boundary -> component factory -> Python boundary -> main window/GraphData boundary -> pre-window/signals -> plugins manager -> app initializer -> operator repository -> command-line/workbench -> event loop`. After stop/drain/settings-save, completed lifecycle stages unwind in the strict reverse dependency order; signals disconnect with the pre-window stage before the window is destroyed.
 
-The T041 Debug FITK binary allowlist is exactly `FITKCore` and `FITKAppFramework`. `FITKCore` supplies the real thread pool and operator repository; `FITKAppFramework` supplies `FITKApplication`, `FITKGlobalData`, component/plugin/signal managers and the public factory registration entry points. Concrete ModelData, geometry commands, render-window/adaptor, HDF5/IO, Python wrappers, formal GUI and plugin business behavior remain disabled mapping entries owned by T005 and later tasks.
+The T041 Debug FITK binary allowlist is exactly `FITKCore` and `FITKAppFramework`. `FITKCore` supplies the real thread pool and operator repository; `FITKAppFramework` supplies `FITKApplication`, `FITKGlobalData`, component/plugin/signal managers and the public factory registration entry points. T005 supplies the source-built `ApplicationRuntime` without adding a FITK DLL. Geometry commands, render-window/adaptor, HDF5/IO, Python wrappers, formal GUI and plugin business behavior remain disabled mapping entries owned by later tasks.
 
 ## Thread and Task Model
 

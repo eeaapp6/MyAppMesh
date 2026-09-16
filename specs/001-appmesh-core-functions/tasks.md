@@ -14,16 +14,16 @@
 
 ## Phase 2: 全局数据和几何/网格数据模型
 
-- [ ] T005 [P] [S2] 实现 `src/model/ModelData/DataObject.{h,cpp}`、`ApplicationRuntime` 和线程安全 ID/名称索引 | 前置任务: T003 | 影响模块: ModelData | 需求编号: FR-005, FR-007, FR-020 | 设计章节: data-model.md Common DataObject | 输入: 对象类型、名称、父对象 | 输出: 稳定 ID、唯一命名和生命周期 API | 验收条件: ID 创建后不变、管理器内名称唯一、删除无悬空索引
-- [ ] T006 [P] [S2] 实现 `GeometryObject`、`GeometryManager` 及导入暂存、拓扑实体和显示状态模型 | 前置任务: T005 | 影响模块: ModelData | 需求编号: FR-005, FR-006 | 设计章节: data-model.md GeometryObject | 输入: 已解析几何、元数据 | 输出: 可校验几何对象 | 验收条件: 无效对象不入库；重名自动修正；查询、分组、可见性和删除可用
-- [ ] T007 [P] [S2] 实现 `MeshKernel`、`MeshData`、节点/单元/集合结构和完整性校验 | 前置任务: T005 | 影响模块: ModelData | 需求编号: FR-007, FR-010 | 设计章节: data-model.md MeshData and MeshKernel | 输入: 节点、单元、集合、geometryId、参数 | 输出: 校验后的网格模型 | 验收条件: ID 唯一、节点引用存在、cell arity/维度/集合引用校验可定位错误
-- [ ] T008 实现 `MeshManager`、`MeshDataCreator` 注册/注销和 Geometry-Mesh 关联索引 | 前置任务: T006, T007 | 影响模块: ModelData | 需求编号: FR-007, FR-008, FR-010 | 设计章节: plan.md Core Interfaces; data-model.md | 输入: 网格类型、创建器、几何 ID | 输出: 网格创建/查询/删除服务 | 验收条件: 重复注册有明确错误；创建失败不入库；删除不产生悬空关联
-- [ ] T009 [P] [S2] 编写 ModelData 单元和线程安全测试 `tests/unit/model/` | 前置任务: T005-T008 | 影响模块: ModelData、测试 | 需求编号: FR-020, FR-021 | 设计章节: plan.md Testing Strategy | 输入: 重名对象、非法拓扑、并发夹具 | 输出: CTest 测试套件 | 验收条件: ID/名称/拓扑/关联不变量覆盖，失败返回 ErrorInfo
+- [X] T005 [P] [S2] 实现 `src/model/ModelData/DataObject.{h,cpp}`、`ApplicationRuntime` 和线程安全 ID/名称索引 | 前置任务: T003 | 影响模块: ModelData | 需求编号: FR-005, FR-007, FR-020 | 设计章节: data-model.md Common DataObject | 输入: 对象类型、名称、父对象 | 输出: 稳定 ID、唯一命名和生命周期 API | 验收条件: ID 创建后不变、管理器内名称唯一、删除无悬空索引
+- [X] T006 [P] [S2] 实现 `GeometryObject`、`GeometryManager` 及导入暂存、拓扑实体和显示状态模型 | 前置任务: T005 | 影响模块: ModelData | 需求编号: FR-005, FR-006 | 设计章节: data-model.md GeometryObject | 输入: 已解析几何、元数据 | 输出: 可校验几何对象 | 验收条件: 无效对象不入库；重名自动修正；查询、分组、可见性和删除可用
+- [X] T007 [P] [S2] 实现 `MeshKernel`、`MeshData`、节点/单元/集合结构和完整性校验 | 前置任务: T005 | 影响模块: ModelData | 需求编号: FR-007, FR-010 | 设计章节: data-model.md MeshData and MeshKernel | 输入: 节点、单元、集合、geometryId、参数 | 输出: 校验后的网格模型 | 验收条件: ID 唯一、节点引用存在、cell arity/维度/集合引用校验可定位错误
+- [X] T008 实现 `MeshManager`、`MeshDataCreator` 注册/注销和 Geometry-Mesh 关联索引 | 前置任务: T006, T007 | 影响模块: ModelData | 需求编号: FR-007, FR-008, FR-010 | 设计章节: plan.md Core Interfaces; data-model.md | 输入: 网格类型、创建器、几何 ID | 输出: 网格创建/查询/删除服务 | 验收条件: 重复注册有明确错误；创建失败不入库；删除不产生悬空关联
+- [X] T009 [P] [S2] 编写 ModelData 单元和线程安全测试 `tests/unit/model/` | 前置任务: T005-T008 | 影响模块: ModelData、测试 | 需求编号: FR-020, FR-021 | 设计章节: plan.md Testing Strategy | 输入: 重名对象、非法拓扑、并发夹具 | 输出: CTest 测试套件 | 验收条件: ID/名称/拓扑/关联不变量覆盖；失败结果继续使用 `Common::OperationResult` 和 `Diagnostic`；不得提前依赖或实现 T014 的 `ErrorInfo`、`Task` 或统一任务状态机
 
 ## Phase 3: 主窗口、模型树、控制台和三维窗口
 
-- [ ] T010 [P] [S3] 实现 `src/gui/GUIFrame/MainWindow.{h,cpp}`、Ribbon、Dock 和主窗口装配 | 前置任务: T004, T006, T008 | 影响模块: GUIFrame、FastCAE GUI | 需求编号: FR-011, FR-001 | 设计章节: 系统设计报告第 5.3、14.1 节 | 输入: ComponentFactory、GraphData 视图端口 | 输出: 主窗口和菜单入口 | 验收条件: 主窗口、Ribbon、模型树、控制台和三维区域可创建
-- [ ] T011 [P] [S3] 实现 `src/gui/GUIWidget/ModelTree.{h,cpp}`、节点模型和 `ConsoleWidget` | 前置任务: T006, T008 | 影响模块: GUIWidget、控制台 | 需求编号: FR-005, FR-011 | 设计章节: 系统设计报告第 5.4、7 节 | 输入: ModelData 查询、任务/日志事件 | 输出: 几何/网格树和控制台 | 验收条件: 对象增删、命名、可见性、选择与数据同步，控制台展示诊断
+- [X] T010 [P] [S3] 实现 `src/gui/GUIFrame/MainWindow.{h,cpp}`、Ribbon、Dock 和主窗口装配 | 前置任务: T004, T006, T008 | 影响模块: GUIFrame、FastCAE GUI | 需求编号: FR-011, FR-001 | 设计章节: 系统设计报告第 5.3、14.1 节 | 输入: ComponentFactory、GraphData 视图端口 | 输出: 主窗口和菜单入口 | 验收条件: 主窗口、Ribbon、模型树、控制台和三维区域可创建
+- [X] T011 [P] [S3] 实现 `src/gui/GUIWidget/ModelTree.{h,cpp}`、节点模型和 `ConsoleWidget` | 前置任务: T006, T008 | 影响模块: GUIWidget、控制台 | 需求编号: FR-005, FR-011 | 设计章节: 系统设计报告第 5.4、7 节 | 输入: ModelData 查询、任务/日志事件 | 输出: 几何/网格树和控制台 | 验收条件: 对象增删、命名、可见性、选择与数据同步，控制台展示诊断
 - [ ] T012 实现 `src/gui/GUIDialog/WorkDirectoryDialog`、`GeneratorDialog`、`ProjectDialog` 输入收集与校验 | 前置任务: T002, T010 | 影响模块: GUIDialog | 需求编号: FR-004, FR-008, FR-013 | 设计章节: plan.md GUIWidget/GUIDialog | 输入: 设置、具体生成器参数、文件路径 | 输出: 结构化参数 | 验收条件: 只收集/校验输入，不执行长任务；非法输入被拒绝
 - [ ] T013 [P] [S3] 编写 GUI 冒烟、FastCAE/VTK 装配和 UI 心跳测试 `tests/integration/gui/` | 前置任务: T010-T012 | 影响模块: GUIFrame、GUIWidget、GraphData | 需求编号: FR-011, FR-015, SC-001, SC-002 | 设计章节: plan.md Testing Strategy、quickstart.md UI responsiveness heartbeat | 输入: 最小运行时、持续至少 5 秒的受控后台任务 | 输出: GUI 集成测试与心跳采样报告 | 验收条件: UI 启动成功；UI 线程 100 ms `QTimer` 在后台任务运行期间连续记录至少 50 次回调，最大相邻回调间隔不超过 500 ms；至少观察到一次 `running` 且仅收到一个完成或失败终态
 

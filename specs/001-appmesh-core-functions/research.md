@@ -36,6 +36,16 @@
 
 **Alternatives considered**: A permanent plain `QMainWindow` shell was rejected now that the required ribbon dependency is present. Making Qwt a mandatory dependency was rejected because it expands deployment without satisfying a current requirement.
 
+## Decision: Freeze the T010/T011 GUI seam at QWidget injection
+
+**Decision**: T010 owns the `QMainWindow` shell, central replaceable viewport host, model-tree and console docks, and a minimal File/View/Mesh command area. It exposes non-owning injection calls for `QWidget` instances; after injection, normal Qt parent ownership controls destruction and replacement. T011 owns the model/view tree and console behavior only, never creates a main window or dock, and never stores `DataObject`, geometry, mesh, or FITK object pointers. Tree nodes contain value snapshots keyed by stable `ObjectId`.
+
+**Business routing**: The tree refreshes from `ApplicationRuntime::snapshots()`. Generic mutations use `ApplicationRuntime`; Geometry mutations use `GeometryManager`; Mesh mutations use `MeshManager`. T011 therefore requires the same narrow rename, parent, visibility, and selection forwarding surface on `MeshManager` that already exists on `GeometryManager`. These methods validate type/payload ownership before delegating common fields to the runtime; they do not create a second state store.
+
+**Thread and lifetime boundary**: GUI objects are created and destroyed on the GUI thread. The runtime and managers outlive bindings, bindings can be explicitly cleared before shutdown, and all queries return value snapshots. Console calls from worker threads are queued to the widget's GUI thread. T013 retains the five-second heartbeat test; T026 retains VTK/GraphData and picking.
+
+**Ribbon boundary**: T010 may use a minimal Qt command area without expanding the audited FITK Debug allowlist. The bundled SARibbon headers and Debug binary remain the planned presentation adapter, but linking and staging that third-party runtime must be introduced only with its own explicit dependency target and validation evidence; the Qt command surface preserves the action seam until then.
+
 ## Decision: HDF5 namespaces with best-effort plugin restoration
 
 **Rationale**: HDF5 is required by the design report. Base paths remain stable while plugins own namespaced payloads. The clarified current scope only promises best-effort restoration when project type/version and required plugins match.
@@ -68,7 +78,7 @@
 
 - Dependency package: `dependencies/FastCAECodeBase/Tools` is present and contains the required Win64 Debug libraries and CMake dependency modules.
 - Build ABI: Visual Studio 2017/MSVC v141 x64 with Qt 5.14.2 `msvc2017_64`; C++17 at the APPMesh target level; CMake minimum 3.16.
-- Host build baseline: FastCAE scripts target Windows SDK 10.0.17763.0. T001 verified it under `C:\Windows Kits\10` through the required VS2017 `vcvarsall.bat` invocation and completed the Debug build.
+- Host build baseline: FastCAE scripts target Windows SDK 10.0.17763.0. T001 verified it through the required VS2017 `vcvarsall.bat` invocation and completed the Debug build without storing a machine-specific installation root.
 - First-release generator: Gmsh 4.5.4. TetGen and FastCAE Grid are future plugin candidates, not current dependencies.
 - Runtime versions: OCC 7.4.0 beta, VTK 9.4.2, HDF5 1.14.0, CGNS 4.2.0, SARibbon 2.0.1, Python 3.7.0/PythonQt; Qwt 6.2.0 optional.
 - Current-release cancellation: not implemented; tasks complete or fail and controlled shutdown is supported.
@@ -92,9 +102,63 @@ All 28 `FITK*.dll` modules in `output/bin_d` have matching `.lib` files. Presenc
 | `FITKCore` 1.0.4 | `output/bin_d/FITKCore.lib`, `FITKCore.dll` | `FITK_Kernel/FITKCore/FITKCoreAPI.h`, `FITKThreadPool.h`, `FITKOperatorRepo.h` | Real thread pool and operator repository | `Qt5Widgetsd`, `Qt5Cored`, MSVC/UCRT Debug, Windows | Allow |
 | `FITKAppFramework` 1.0.7 | `output/bin_d/FITKAppFramework.lib`, `FITKAppFramework.dll` | `FITK_Kernel/FITKAppFramework/FITKAppFramework.h`, factory/global/component/plugin headers | `FITKApplication`, global data, components, plugins, signals and public factory registration | `FITKCore`, `Qt5Widgetsd`, `Qt5Guid`, `Qt5Networkd`, `Qt5Cored`, MSVC/UCRT Debug, Windows | Allow |
 
-No direct or transitive dependency of these two DLLs names an original APPMesh business DLL. `FITKAdaptor`, `FITKRenderWindowVTK`, `FITKInterfaceGeometry`/`FITKGeoCommandList`, `FITKPython`, IO, mesh, geometry, generator, AI, widget and solver/data modules are rejected from the T041 allowlist because their concrete behavior belongs to T005 and later tasks; T041 records their disabled connection points without loading them. `MeshApp.exe`, GraphData, GUIFrame/GUIWidget/GUIDialog, ModelData, Operators, GeometryIO and HDF5IO binaries are categorically prohibited.
+No direct or transitive dependency of these two DLLs names an original APPMesh business DLL. `FITKAdaptor`, `FITKRenderWindowVTK`, `FITKInterfaceGeometry`/`FITKGeoCommandList`, `FITKPython`, IO, mesh, geometry, generator, AI, widget and solver/data modules are rejected from the T041 allowlist because their concrete behavior belongs to T006 and later tasks; T041 records their disabled connection points without loading them. Original `MeshApp.exe`, GraphData, GUIFrame/GUIWidget/GUIDialog, ModelData, Operators, GeometryIO and HDF5IO binaries are categorically prohibited.
 
 `FITKApplication` owns factory pointers registered through its void APIs and deletes any still-registered factory during destruction. The production adapter therefore owns only APPMesh service bookkeeping. A small public-contract bridge is transferred to FITK while registered; on reverse shutdown the adapter first calls the same public registration API with `nullptr`, then deletes the detached bridge. APPMesh continues to own its `ManagedService` instances. This prevents overwrite leaks and double deletion, while duplicate keys are rejected before calling FITK.
 
-The final Debug validation runs 12/12 CTest tests and 5/5 T004/T041 focused tests. The real non-blocking smoke process reports `FITKAppFramework=1.0.7`, `FITKCore=1.0.4`, the real adapter name and strict startup/reverse-shutdown logs. `APPMesh.exe` directly depends on `FITKAppFramework.dll`, `FITKCore.dll`, `hdf5_D.dll`, `Qt5Widgetsd.dll` and `Qt5Cored.dll`; it contains no Release Qt/HDF5 or original APPMesh business dependency. Concrete ModelData is still T005.
+The T041 baseline validation ran 12/12 CTest tests and 5/5 T004/T041 focused tests. After T005, the full Debug suite runs 16/16 tests while retaining the same FITK-focused coverage. The real non-blocking smoke process reports `FITKAppFramework=1.0.7`, `FITKCore=1.0.4`, the real adapter name and strict startup/reverse-shutdown logs. `APPMesh.exe` directly depends on `FITKAppFramework.dll`, `FITKCore.dll`, `hdf5_D.dll`, `Qt5Widgetsd.dll` and `Qt5Cored.dll`; it contains no Release Qt/HDF5 or original APPMesh business dependency.
+
+## Decision: T005 uses a snapshot-based, thread-safe ApplicationRuntime
+
+**Rationale**: `ApplicationRuntime` owns all common `DataObject` instances behind one `QReadWriteLock`. `ObjectId` is `quint64`, zero is invalid, allocation starts at one by default, increases monotonically, never reuses deleted IDs and reports exhaustion instead of wrapping. Public queries return `DataObjectSnapshot` values, so callers never retain a mutable reference or a pointer that can dangle after deletion.
+
+Names are trimmed and indexed by `QString::toCaseFolded()` while preserving the chosen display case. Conflicts receive deterministic suffixes `Name (2)`, `Name (3)`, and so on. The runtime maintains ID, normalized-name and parent-to-children indexes as one source of truth; write operations update them under one write lock. Missing parents, self-parenting, cycles and removal of a parent with children are rejected without changing existing objects. The production composition root registers this source-built runtime through `GlobalDataFactory`; it does not link an original APPMesh ModelData binary or expand the FITK Debug allowlist.
+
+**Alternatives considered**: Returning owned-object pointers was rejected because concurrent deletion would make their lifetime unsafe. Random IDs were rejected because they do not provide a deterministic no-collision guarantee. Case-sensitive names were rejected for the Windows target, and cascading parent deletion was deferred because no product rule currently authorizes removal of an entire subtree.
+
+## Decision: Freeze T006-T008 as common records plus domain payloads
+
+**Conflict found**: The earlier model text said that `GeometryManager` owns Geometry objects, names and display state, while T005 already made `ApplicationRuntime` the sole owner of `DataObject`, global IDs, unique names, parent-child indexes and common display fields. Inheriting Geometry or Mesh types from the now-`final` `DataObject` would also contradict the implemented T005 contract.
+
+**Decision**: Domain models use composition and `ObjectId` association. `ApplicationRuntime` owns the common record; `GeometryManager` owns only an APPMesh geometry payload/adapter record with the same ID. `GeometryObjectSnapshot` combines detached common and geometry values. T007 `MeshData` and `MeshKernel` remain value objects; T008 later owns committed mesh payloads and Geometry-Mesh indexes. No manager returns runtime-owned or FITK-owned raw pointers to business callers.
+
+**Rationale**: This retains one source of truth for ID/name/parent state, lets T006 and T007 work in separate source files, and preserves the snapshot safety proven by T005.
+
+**Alternatives considered**: `GeometryObject : DataObject` was rejected because `DataObject` is final and runtime-owned. Giving each domain manager a second common record/index was rejected because rename, display and deletion could diverge. Making `ApplicationRuntime` own geometry payloads was rejected because it would turn the common catalog into a domain-specific manager.
+
+## Decision: Use a narrow hidden registration protocol for domain objects
+
+**Conflict found**: The current public one-step `createObject()` publishes a record before a separate `GeometryManager` can install its payload. Compensating deletion alone would leave a concurrently observable interval in which a Geometry common record exists without geometry data. The current public create/remove methods also let business code bypass the geometry lifecycle entry point.
+
+**Decision**: T006 makes the minimum T005-compatible extension described in `data-model.md`: a manager-only reserve/publish/cancel/typed-remove capability. Reservations allocate IDs and names but remain outside public queries and indexes; publication occurs only after payload installation. Generic `createObject()` behavior remains unchanged, while generic create/remove reject Geometry and Mesh types. T007 depends only on the existing const snapshot query and does not edit this registration surface.
+
+**Rationale**: The protocol enforces the postcondition without holding a geometry lock during a runtime call, preserves non-reused IDs on failure, and avoids introducing a general transaction coordinator. It also gives T008 the same narrow boundary for Mesh without moving its association work forward.
+
+**Alternatives considered**: Holding both manager locks was rejected because it creates lock-order inversion risk. Creating then deleting on failure was rejected because readers could observe a half-initialized Geometry. A general multi-resource transaction framework was rejected as unnecessary for T006-T008.
+
+## Decision: T007 validates geometryId through the common catalog only
+
+**Decision**: A zero `geometryId` represents an unassociated mesh candidate. For a nonzero value, T007 calls `ApplicationRuntime::findById()` through a read-only reference and requires `DataObjectType::Geometry`. It does not include, call or lock `GeometryManager` and does not create Geometry-Mesh indexes.
+
+**Rationale**: Existence and type are common-record facts already available from T005. This keeps T006 and T007 parallel and reserves association ownership, reverse lookup and delete constraints for T008.
+
+**Alternatives considered**: Calling `GeometryManager` was rejected because it introduces an unnecessary T006 dependency and shared-file pressure. Treating every nonzero `ObjectId` as Geometry was rejected because a Generic or Mesh ID would pass incorrectly.
+
+## Decision: APPMesh is the FITK business adapter/snapshot layer
+
+**Source evidence**: FITK already supplies global `FITKAbstractDataObject` identity, thread-safe `FITKAbstractDataManager`, `FITKGeoModelManager`/geometry command and OCC shape abstractions, `FITKAbstractMesh`, node and element lists, unstructured topology and geometry-to-mesh mapping. Those are established owners of heavy geometry and mesh data.
+
+**Decision**: FITK/OCC retains canonical committed BRep/topology, mesh nodes/elements/topology and component objects. APPMesh owns its separate business `ObjectId`, source/generator provenance, UI/business metadata, validation snapshots and stable mappings to FITK data/topology keys. T007's node/element/set containers are transient validation/interchange values; T008 adapts them into FITK rather than retaining a second long-lived heavy mesh graph. `GeometryObjectSnapshot`, `MeshData` and `MeshKernel` are detached APPMesh values and never expose FITK pointers.
+
+**Rationale**: This follows Constitution I by adapting public FITK abstractions instead of reimplementing their storage/managers, while retaining deterministic validation and testability before a failed import or generator result can enter FITK-owned state.
+
+**Alternatives considered**: A fully independent APPMesh geometry/mesh repository was rejected as duplicated ownership and synchronization risk. Exposing FITK manager pointers directly was rejected because their lifetime and thread guarantees do not satisfy the T005 snapshot contract. Using FITK's signed integer IDs as APPMesh-wide IDs was rejected because those IDs belong to the FITK object scope; adapters instead range-check APPMesh `quint64` entity IDs at conversion.
+
+## Decision: Freeze only the minimal identifiers and validation vocabulary
+
+**Decision**: Geometry entity, node, element and set IDs are nonzero `quint64` values scoped to their containing Geometry or `MeshKernel`. Geometry formats are limited to BRep/STEP/IGES, topology kinds to vertex/edge/face/solid, mesh dimension to D2/D3/Mixed, set targets to node/element, and cell types to Line2/Triangle3/Quadrilateral4/Tetrahedron4/Hexahedron8 with fixed arity. Generator key/version, common parameters, generator parameters and display metadata remain separate copied fields.
+
+**Rationale**: These values cover the known T006-T008 requirements and frozen import/generator path without inventing a plugin schema or enumerating unsupported higher-order elements. Logical diagnostic paths identify the geometry entity, kernel ordinal, node, element or set using the existing `Common::Diagnostic` fields.
+
+**Alternatives considered**: A comprehensive OCC/Gmsh/CGNS enum mirror was rejected because it would freeze unused third-party details. Implementing T014 `ErrorInfo` early was rejected; T006 and T007 continue to use `Common::OperationResult` and `Diagnostic`, whose codes remain internal identifiers.
 

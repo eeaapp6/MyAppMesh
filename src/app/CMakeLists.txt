@@ -32,6 +32,8 @@ add_library(appmesh_app STATIC
 target_include_directories(appmesh_app PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(appmesh_app
     PUBLIC
+        appmesh_gui
+        appmesh_model
         Qt5::Core
         Qt5::Widgets
         APPMesh::FITKAppFramework

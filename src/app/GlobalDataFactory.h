@@ -1,6 +1,7 @@
 #pragma once
 
 #include "AppDiagnostic.h"
+#include "../common/ManagedService.h"
 
 #include <QStringList>
 
@@ -11,11 +12,7 @@
 
 namespace AppMesh::App
 {
-class ManagedService
-{
-public:
-    virtual ~ManagedService() = default;
-};
+using ManagedService = Common::ManagedService;
 
 // Narrow ABI boundary for the public FITK registration contracts. A concrete
 // T004 adapter maps these calls to FITKApplication::regGlobalDataFactory and
