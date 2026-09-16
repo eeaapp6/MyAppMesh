@@ -10,7 +10,7 @@ APPMesh will be rebuilt as a FastCAE/FITK desktop application while preserving t
 
 ## Technical Context
 
-**Language/Version**: C++17 (`CMAKE_CXX_STANDARD 17`) with MSVC 14.16/v141 from Visual Studio 2017 on Windows x64. All application and dependency binaries must use the same MSVC runtime and build configuration.
+**Language/Version**: C++17 (`CMAKE_CXX_STANDARD 17`) with MSVC 14.16/v141 from Visual Studio 2017 on Windows x64. Debug is the only supported build configuration, and all application and dependency binaries must use the matching Debug ABI.
 
 **Build System**: CMake 3.16 or newer with the `Visual Studio 15 2017` x64 generator. New APPMesh code does not add qmake project files; existing FastCAE `.pro/.pri` files remain reference material only. Configure the dependency root explicitly as `dependencies/FastCAECodeBase/Tools`.
 
@@ -22,7 +22,7 @@ APPMesh will be rebuilt as a FastCAE/FITK desktop application while preserving t
 
 **Testing**: CTest-driven C++ unit tests, plugin and extension contract tests, FastCAE/VTK integration tests, fixture-based HDF5 compatibility tests, and deployment smoke tests.
 
-**Target Platform**: Windows x64 desktop. The compatibility baseline is Visual Studio 2017/v141, Qt 5.14.2 `msvc2017_64`, and the matching Debug/Release libraries under `Tools/Win64`. The FastCAE scripts request Windows SDK 10.0.17763.0; T001 validated that SDK under `C:\Windows Kits\10` through `vcvarsall.bat`.
+**Target Platform**: Windows x64 desktop in Debug configuration only. The compatibility baseline is Visual Studio 2017/v141, Qt 5.14.2 `msvc2017_64`, and matching Debug libraries under `Tools/Win64`. The FastCAE scripts request Windows SDK 10.0.17763.0; T001 validated that SDK under `C:\Windows Kits\10` through `vcvarsall.bat`. Non-Debug configurations are permanently unsupported.
 
 **Project Type**: Desktop CAE application with dynamically loaded plugins and optional automation services.
 
@@ -39,20 +39,20 @@ The following inventory was verified against `dependencies/FastCAECodeBase/Tools
 | Area | Pinned selection | Repository/host evidence | Status |
 |---|---|---|---|
 | Compiler ABI | Visual Studio 2017, MSVC 14.16.27023/v141, x64 | FastCAE build scripts and installed VS2017 toolset | Ready |
-| Windows SDK | 10.0.17763.0 compatibility target | FastCAE build scripts and T001 Debug/Release builds | Ready under `C:\Windows Kits\10` |
+| Windows SDK | 10.0.17763.0 compatibility target | FastCAE build scripts and T001 Debug build | Ready under `C:\Windows Kits\10` |
 | Build | CMake minimum 3.16 | FastCAE module `CMakeLists.txt` files | Ready; T001 uses stable CMake 3.30.5 and does not rely on host CMake 4.1.0-rc3-only behavior |
 | Qt | Qt 5.14.2 `msvc2017_64` | Local `qmake -query QT_VERSION` and FastCAE scripts | Ready |
 | FastCAE/FITK | Repository-pinned sources and matching shared-library layout | `FITK_Kernel`, `FITK_Interface`, `FITK_Component` | Ready; T001 configure/build validation passed |
-| Geometry | Open CASCADE 7.4.0 beta | `OCC/include/Standard_Version.hxx`; release/debug libraries present | Ready |
-| 3D rendering | VTK 9.4.2 | `VTK942` CMake version file; release/debug DLLs present | Ready |
+| Geometry | Open CASCADE 7.4.0 beta | `OCC/include/Standard_Version.hxx`; Debug libraries present | Ready |
+| 3D rendering | VTK 9.4.2 | `VTK942` CMake version file; Debug DLLs present | Ready |
 | Mesh generation | Gmsh 4.5.4 and `FITKGmshExeDriver` 2.0.0 | Bundled executable plus existing FITK driver source | Ready; first-release engine |
-| Persistence | HDF5 1.14.0 | `H5public.h`; release/debug libraries present | Ready |
-| Mesh exchange | CGNS 4.2.0 | `cgnslib.h`; release/debug libraries present | Ready where FITKCGNSIO contract applies |
-| Desktop ribbon | SARibbon 2.0.1 | Headers and release/debug libraries present | Ready |
-| Embedded scripting | Python 3.7.0 plus PythonQt for Qt5/Python 3.7 | Executable, headers and release/debug libraries present | Ready for extension phase |
-| Optional plotting | Qwt 6.2.0 | Headers and release/debug libraries present | Available, not core scope |
+| Persistence | HDF5 1.14.0 | `H5public.h`; Debug libraries present | Ready |
+| Mesh exchange | CGNS 4.2.0 | `cgnslib.h`; Debug libraries present | Ready where FITKCGNSIO contract applies |
+| Desktop ribbon | SARibbon 2.0.1 | Headers and Debug libraries present | Ready |
+| Embedded scripting | Python 3.7.0 plus PythonQt for Qt5/Python 3.7 | Executable, headers and Debug libraries present | Ready for extension phase |
+| Optional plotting | Qwt 6.2.0 | Headers and Debug libraries present | Available, not core scope |
 
-Release binaries/libraries come from `bin`/`lib`, while Debug binaries/libraries come from `bind`/`libd`, as defined by the bundled CMake configuration. A configuration must never mix the two sets.
+All targets use the bundled Debug binaries and libraries from `bind`/`libd`. Build, test and deployment commands must reject non-Debug configurations rather than map them to Debug artifacts.
 
 ## Constitution Check
 
@@ -155,17 +155,28 @@ Dependency direction is strictly `FastCAE base -> FastCAE components -> APPMesh 
 
 ## Application Initialization Order
 
-1. Parse command line and select desktop, workbench or optional HTTP mode.
-2. Validate runtime environment, Qt/VTK platform, dependencies, memory and work directory.
-3. Construct FastCAE application and settings/history services.
-4. Register `GlobalDataFactory` and create `ApplicationRuntime`, `ModelData` managers and task service.
-5. Register `ComponentFactory` and create core components (messages, IO, VTK view, console).
-6. Register controlled `PythonInterface`/`PyRegister` bindings and initialize `SignalProcessor`.
-7. Create the main window through `MainWindowGenerator`; initialize `GUIFrame`, `GUIWidget`, `GUIDialog`, `GraphData` and `PreWindowInitializer`.
-8. Discover and validate plugins; load compatible plugins and register capabilities, creators and persistence hooks.
-9. Register `OperatorsInterface`, `OperatorsModel`, `OperatorsGUI` routes.
-10. Process command-line/workbench inputs only after required services and the main window exist.
-11. Enter the Qt event loop. On exit, stop new submissions, finish in-flight tasks, persist configuration/history, unload plugins, destroy components, then release global data.
+T004 implements the composition root in this exact order:
+
+1. Parse basic command-line arguments and select desktop, workbench or smoke mode.
+2. Load versioned settings and recent history through `MeshAPPSettings`.
+3. Run `SystemChecker` against dependencies, Qt, the selected working directory and free space.
+4. On an environment failure, emit structured diagnostics and stop before the event loop.
+5. Initialize `GlobalDataFactory` through `IFastCAERegistrationAdapter`.
+6. Initialize `ComponentFactory` after global data succeeds.
+7. Execute `PyRegister`; an explicitly disabled Python capability is a valid no-op, while an enabled capability without an adapter fails.
+8. Create a verifiable minimal `QWidget` through `MainWindowGenerator`; T010 owns the formal Ribbon shell.
+9. Execute `PreWindowInitializer` and establish `SignalProcessor` connections.
+10. Initialize the plugin lifecycle boundary. T022-T025 own discovery and concrete plugin behavior.
+11. Execute `AppInitializer`.
+12. Initialize the operator registration boundary. T014 and later tasks own concrete operators.
+13. Process command-line or Workbench input after all required services exist.
+14. Enter the injected Qt event-loop boundary only after every preceding stage succeeds.
+
+Every stage returns structured diagnostics containing a stage, code, message and detail. A failed start rolls back only completed stages, preserving the original failure before any rollback diagnostics. Controlled shutdown stops new operations, finishes the current task boundary, saves settings, and releases completed stages in reverse dependency order; signal disconnection is paired with pre-window shutdown before window destruction. Repeated start, repeated shutdown and shutdown after a failed start are side-effect safe.
+
+T041 makes the production composition root a real `FITKApplication` and inserts `fitk.application` before command-line parsing. `FITKFastCAERegistrationAdapter` calls the public `regGlobalDataFactory` and `regComponentsFactory` APIs, verifies the real global-data, component, plugin, signal, thread-pool and operator-repository managers, and rejects duplicate keys before FITK's void registration calls can overwrite ownership. The canonical mapped order is `FITKApplication -> settings/system check -> global data/ModelData boundary -> component factory -> Python boundary -> main window/GraphData boundary -> pre-window/signals -> plugins manager -> app initializer -> operator repository -> command-line/workbench -> event loop`. After stop/drain/settings-save, completed lifecycle stages unwind in the strict reverse dependency order; signals disconnect with the pre-window stage before the window is destroyed.
+
+The T041 Debug FITK binary allowlist is exactly `FITKCore` and `FITKAppFramework`. `FITKCore` supplies the real thread pool and operator repository; `FITKAppFramework` supplies `FITKApplication`, `FITKGlobalData`, component/plugin/signal managers and the public factory registration entry points. Concrete ModelData, geometry commands, render-window/adaptor, HDF5/IO, Python wrappers, formal GUI and plugin business behavior remain disabled mapping entries owned by T005 and later tasks.
 
 ## Thread and Task Model
 
@@ -200,7 +211,7 @@ Use `ErrorInfo { category, code, message, detail, recoverable, taskId, objectId,
 1. Unit-test ID/name invariants, mesh topology/set validation, concrete parameter validation, task state behavior and error reporting. Settings tests cover saving and loading stale recent-file entries plus mixed valid, duplicate and stale history while preserving case-insensitive deduplication and the configured maximum count.
 2. Contract-test plugin discovery, API compatibility, capability registration, install rollback, unload cleanup and generator result validation.
 3. Contract-test HDF5 context creation, Version type/version checks, plugin read/write dispatch and failure reporting.
-4. Integration-test initialization order, FastCAE factories, VTK/GraphData synchronization, operator routing and UI-thread responsiveness. The responsiveness fixture keeps each target worker active for at least 5 seconds, runs a 100 ms `QTimer` on the UI thread, records at least 50 consecutive callbacks, fails when any adjacent callback interval exceeds 500 ms, and verifies one observed `running` state followed by exactly one terminal state.
+4. Integration-test initialization order, real `FITKApplication` factory registration, the Debug FITK DLL allowlist, reverse rollback, FastCAE factories, VTK/GraphData synchronization, operator routing and UI-thread responsiveness. T041 additionally executes a non-blocking real-FITK smoke test and uses `dumpbin /dependents` to reject Release Qt/HDF5, unlisted FITK libraries and original APPMesh business DLLs. The responsiveness fixture keeps each target worker active for at least 5 seconds, runs a 100 ms `QTimer` on the UI thread, records at least 50 consecutive callbacks, fails when any adjacent callback interval exceeds 500 ms, and verifies one observed `running` state followed by exactly one terminal state.
 5. Driver-test the first-release Gmsh path with a fake executable plus the bundled Gmsh 4.5.4 smoke fixture; cover missing executable, non-zero exit, malformed output and large output streams. Reuse the same contract suite when a future TetGen or FastCAE Grid plugin is actually supplied.
 6. Extension-test Python and HTTP success/failure dispatch through operators, permission checks and non-serializable results; do not assert an uncommitted stable schema.
 7. End-to-end test geometry-import -> mesh-generate -> display -> export -> HDF5-save and controlled shutdown/failure preservation.
@@ -213,7 +224,7 @@ Use `ErrorInfo { category, code, message, detail, recoverable, taskId, objectId,
 - Use FastCAE VTK windows, view adapters, generic widgets, console and file-dialog infrastructure; `GUIFrame`, `GUIWidget` and `GUIDialog` supply APPMesh-specific composition and validation.
 - Use FastCAE HDF5/IO primitives and let currently loaded plugins own their project data read/write behavior.
 - Use FastCAE Python bridge and registration mechanisms; route calls to APPMesh operators rather than exposing mutable internals.
-- Package Qt 5.14.2, VTK 9.4.2, OCC 7.4.0 beta, SARibbon 2.0.1, HDF5 1.14.0, CGNS 4.2.0, the matching FastCAE libraries, plugins, Gmsh 4.5.4 and resources in separate Debug/Release runtime directories.
+- Package the Debug builds of Qt 5.14.2, VTK 9.4.2, OCC 7.4.0 beta, SARibbon 2.0.1, HDF5 1.14.0, CGNS 4.2.0, the matching FastCAE libraries, plugins, Gmsh 4.5.4 and resources in one validated Debug runtime directory.
 
 ## Complexity Tracking
 
@@ -226,6 +237,8 @@ Additional intentional scope decisions are no stable Python/HTTP public contract
 ## Frozen Scope and Traceability Amendment
 
 The first-release geometry formats are BRep, STEP/STP, and IGES/IGS. Mesh import is FITKMesh; mesh export is FITKMesh, CGNS, and INP. Gmsh 4.5.4 through `FITKGmshExeDriver` is the first-release mesh generator; other engines require a later compatible plugin. Generator parameters follow concrete generator implementations. There is no unified user cancellation; task behavior follows the FastCAE task and driver interfaces. Project restore is best effort for matching project type/version and loaded plugins; unknown plugin payloads are not required to be preserved. Python and HTTP remain controlled internal entry points without a stable versioned schema or public error-code contract.
+
+Debug is the only supported build, test and deployment configuration. Non-Debug configurations are permanently excluded and must be rejected instead of being mapped to Debug libraries. FITK integration uses an explicit allowlist of Debug base artifacts; binaries belonging to the original APPMesh business implementation are prohibited.
 
 Canonical startup order is: `FITKApplication` and command-line mode; `SystemChecker` and settings; `GlobalDataFactory` and `ModelData`; `ComponentFactory` and core components; Python registration; `MainWindowGenerator` with `GUIFrame`/`GUIWidget`/`GUIDialog` and `GraphData`; compatible plugin discovery/load; `AppInitializer` finalization and operator registration; command-line/workbench dispatch; Qt event loop. Shutdown is the reverse dependency order after in-flight work finishes.
 
@@ -255,5 +268,6 @@ FastCAE mapping required by implementation and tests: `FITKGlobalData` -> `Globa
 | FR-020 | diagnostics/ErrorInfo | T009,T019,T032,T040 | AT-11 |
 | FR-021 | traceability/testing | T040,T043,T041,T042 | AT-11,AT-12,AT-02,AT-08 |
 | FR-022 | build/deployment | T001,T038,T043 | AT-12 |
+| FR-023 | Debug-only build/deployment | T001,T038,T041,T043 | AT-01,AT-12 |
 
 

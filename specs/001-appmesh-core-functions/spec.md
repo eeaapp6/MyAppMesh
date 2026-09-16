@@ -18,6 +18,10 @@
 - Q: 工程文件在保存和恢复时，当前版本是否必须完整保存几何、网格、对象关联、插件元数据、运行信息、工作目录和显示状态，并对未知插件数据采用“保留但不加载”的策略？ → A: 否；仅在项目类型和版本匹配且相关插件已加载时尽力恢复，工程数据主要由插件自行读写；未知数据完整保留与诊断列为后续增强。
 - Q: 当前版本是否需要为 Python 和 HTTP 扩展统一定义版本化请求/响应 schema、稳定错误码，以及参数错误、权限错误、任务失败和超时等错误分类？ → A: 否；当前版本不承诺稳定接口，接口定义与稳定错误码留到后续版本。
 
+### Session 2026-09-16
+
+- Q: APPMesh 是否只支持 Debug 构建配置，并永久排除 Release 构建、测试和部署？ → A: 是；项目仅开发、测试和部署 Debug 配置，Release 配置不属于当前或未来范围。
+
 ## User Scenarios & Testing
 
 ### User Story 1 - 几何到网格工作流 (Priority: P1)
@@ -113,6 +117,7 @@
 - **FR-020**: 失败和退出时不得主动破坏仍在内存中的有效数据；诊断信息沿用 FastCAE 消息机制，具体错误字段由各模块实现。
 - **FR-021**: 每项需求 MUST 能追踪到设计模块、实现任务和验证测试；涉及插件、线程、持久化或接口的变更 MUST 包含集成和失败测试；取消测试在引入取消能力后纳入。
 - **FR-022**: 重开发实现 MUST NOT 读取、链接、复制或依赖原始 APPMesh 源码；规格、设计和测试 MUST 以当前需求、架构约束和 FastCAE/FITK 合同为依据。
+- **FR-023**: 项目 MUST 仅支持 Debug 构建、测试和部署；Release 及其他非 Debug 构建配置 MUST NOT 作为实现、验收或交付目标。
 
 ### Key Entities
 
@@ -143,6 +148,7 @@
 - **SC-006**: 100% 的核心用户场景可追踪到至少一条功能需求、一项设计决策、一个实现任务和一个自动化或手工验收测试。
 - **SC-007**: Python、HTTP 和 AI 扩展各至少完成一次可观察的成功请求和失败场景验证；稳定接口 schema、错误码及取消场景不属于当前版本验收承诺。
 - **SC-008**: 使用标准测试数据集时，“导入几何-生成网格-保存工程”主流程能够完成，并对成功、失败和数据保留结果留有验收记录。
+- **SC-009**: 100% 的构建、自动化测试和部署验收均使用 Debug 配置，且不生成、链接、测试或打包 Release 及其他非 Debug 配置产物。
 
 ## Assumptions
 
@@ -151,6 +157,7 @@
 - 工程保存主要依赖各插件写入和读取自身数据；未知插件数据的完整保留和诊断能力属于后续增强项，具体序列化实现属于设计阶段决定的实现细节。
 - 权限、认证和 AI 服务凭据由部署环境提供；本规格要求扩展遵守权限和数据边界，但不规定单一认证方案。
 - 原始 APPMesh 源码不可作为设计、实现或测试输入；需求文档、设计报告、架构图和 FastCAE/FITK 公开合同是允许的依据。
+- 项目永久采用 Debug-only 构建策略；Release 及其他非 Debug 配置不开发、不测试、不部署。
 
 ## Frozen First-Release Decisions
 
@@ -161,6 +168,7 @@
 5. Project restore is best effort when project type/version match and required plugins are loaded. Unknown plugin data is skipped and diagnosed; raw preservation is not required.
 6. Python and HTTP have no stable versioned schema or stable public error-code promise in this release.
 7. Physics fields, solver integration, and complete post-processing are outside the current release scope.
+8. Debug is the only supported build, test, and deployment configuration. Release and all other non-Debug configurations are permanently out of scope.
 
 ## Traceability Matrix
 
@@ -188,4 +196,5 @@
 | FR-020 | ErrorInfo、diagnostics | T009、T019、T032、T040 | AT-11 |
 | FR-021 | Traceability and test strategy | T040、T043、T041、T042 | AT-02、AT-08、AT-11、AT-12 |
 | FR-022 | Build and deployment boundary | T001、T038、T043 | AT-12 |
+| FR-023 | Debug-only build and deployment boundary | T001、T038、T041、T043 | AT-01、AT-12 |
 

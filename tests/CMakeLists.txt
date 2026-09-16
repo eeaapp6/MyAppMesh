@@ -11,6 +11,24 @@ add_test(NAME t001.runtime-layout
 
 set_tests_properties(t001.runtime-layout PROPERTIES DEPENDS t001.bootstrap)
 
+add_test(NAME t001.debug-only-policy
+    COMMAND "${CMAKE_COMMAND}"
+        "-DSOURCE_DIR=${CMAKE_SOURCE_DIR}"
+        "-DBINARY_DIR=${CMAKE_BINARY_DIR}"
+        "-DRUNTIME_DIR=$<TARGET_FILE_DIR:appmesh>"
+        "-DCONFIG=$<CONFIG>"
+        -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/VerifyDebugOnlyPolicy.cmake")
+set_tests_properties(t001.debug-only-policy PROPERTIES DEPENDS t001.runtime-layout)
+
+add_test(NAME t001.debug-binary-dependencies
+    COMMAND "${CMAKE_COMMAND}"
+        "-DDUMPBIN_EXECUTABLE=${APPMESH_DUMPBIN_EXECUTABLE}"
+        "-DAPP_EXECUTABLE=$<TARGET_FILE:appmesh>"
+        "-DCONFIG=$<CONFIG>"
+        -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/VerifyDebugBinaryDependencies.cmake")
+set_tests_properties(t001.debug-binary-dependencies PROPERTIES
+    DEPENDS t001.debug-only-policy)
+
 function(appmesh_add_unit_test target source)
     add_executable(${target} "${source}")
     target_link_libraries(${target} PRIVATE appmesh_app Qt5::Core)
@@ -25,3 +43,34 @@ target_compile_definitions(t002.system-checker PRIVATE
 
 appmesh_add_unit_test(t002.settings unit/app/MeshAPPSettingsTests.cpp)
 appmesh_add_unit_test(t003.factory-lifecycle unit/app/FactoryLifecycleTests.cpp)
+appmesh_add_unit_test(t004.mesh-app-lifecycle unit/app/MeshAppLifecycleTests.cpp)
+set_tests_properties(t004.mesh-app-lifecycle PROPERTIES
+    ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+appmesh_add_unit_test(t041.fitk-component-mapping unit/app/FITKComponentMappingTests.cpp)
+appmesh_add_unit_test(t041.fitk-application-integration
+    integration/app/FITKApplicationIntegrationTests.cpp)
+set_tests_properties(t041.fitk-application-integration PROPERTIES
+    ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+add_test(NAME t041.fitk-debug-dependencies
+    COMMAND "${CMAKE_COMMAND}"
+        "-DDUMPBIN_EXECUTABLE=${APPMESH_DUMPBIN_EXECUTABLE}"
+        "-DAPP_EXECUTABLE=$<TARGET_FILE:appmesh>"
+        "-DRUNTIME_DIR=$<TARGET_FILE_DIR:appmesh>"
+        "-DFITK_OUTPUT_DIR=${FITK_OUTPUT_DIR}"
+        "-DSOURCE_DIR=${CMAKE_SOURCE_DIR}"
+        "-DCONFIG=$<CONFIG>"
+        -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/VerifyFITKDebugDependencies.cmake")
+set_tests_properties(t041.fitk-debug-dependencies PROPERTIES
+    DEPENDS t001.debug-binary-dependencies)
+
+add_test(NAME t041.fitk-smoke
+    COMMAND "${CMAKE_COMMAND}"
+        "-DCMAKE_COMMAND_PATH=${CMAKE_COMMAND}"
+        "-DAPP_EXECUTABLE=$<TARGET_FILE:appmesh>"
+        "-DRUNTIME_DIR=$<TARGET_FILE_DIR:appmesh>"
+        "-DQT_BIN_DIR=$<TARGET_FILE_DIR:Qt5::Core>"
+        -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/VerifyFITKSmoke.cmake")
+set_tests_properties(t041.fitk-smoke PROPERTIES
+    DEPENDS t041.fitk-debug-dependencies)

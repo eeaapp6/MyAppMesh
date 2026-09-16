@@ -27,6 +27,8 @@ compile_commands.json
 # Compiler and linker intermediates
 *.o
 *.a
+*.lib
+*.exp
 *.so
 *.exe
 *.dll

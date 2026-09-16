@@ -15,6 +15,7 @@ struct AppDiagnostic
     QString detail;
     bool recoverable = false;
     QString path;
+    QString stage;
 };
 
 struct AppOperationResult

@@ -64,6 +64,30 @@ int main(int argc, char* argv[])
     nativeRequest.minimumFreeBytes = 1;
 
     AppMesh::App::SystemChecker nativeChecker;
+    const QStringList defaultDependencies =
+        AppMesh::App::SystemChecker::defaultRequiredToolFiles();
+    const QStringList expectedDebugDependencies =
+        QStringList() << QStringLiteral("cmake/OCCConfig.cmake")
+                      << QStringLiteral("Win64/VTK942/bind/vtkCommonCore-9.4d.dll")
+                      << QStringLiteral("Win64/OCC/bind/TKernel.dll")
+                      << QStringLiteral("Win64/hdf5/bind/hdf5_D.dll")
+                      << QStringLiteral("Win64/SARibbon/bind/SARibbonBard.dll")
+                      << QStringLiteral("Win64/gmsh/gmsh.exe");
+    suite.expect(defaultDependencies == expectedDebugDependencies,
+                 QStringLiteral("default dependency set contains only the verified Debug baseline"));
+    bool containsNonDebugDependency = false;
+    for (const auto& dependency : defaultDependencies)
+    {
+        const QString portable = dependency.toLower();
+        containsNonDebugDependency = containsNonDebugDependency ||
+            portable.contains(QStringLiteral("/bin/")) ||
+            portable.contains(QStringLiteral("/lib/")) ||
+            portable.endsWith(QStringLiteral("hdf5.dll")) ||
+            portable.endsWith(QStringLiteral("saribbonbar.dll"));
+    }
+    suite.expect(!containsNonDebugDependency,
+                 QStringLiteral("default dependency set contains no non-Debug path"));
+
     const auto nativeResult = nativeChecker.check(nativeRequest);
     suite.expect(nativeResult.succeeded(), QStringLiteral("validated host dependencies and writable work directory"));
     suite.expect(nativeResult.availableDiskBytes > 0, QStringLiteral("reported available disk bytes"));

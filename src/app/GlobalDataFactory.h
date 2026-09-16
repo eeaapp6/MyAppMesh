@@ -24,6 +24,22 @@ class IFastCAERegistrationAdapter
 {
 public:
     virtual ~IFastCAERegistrationAdapter() = default;
+    virtual AppOperationResult initializeRuntime()
+    {
+        return {};
+    }
+    virtual AppOperationResult shutdownRuntime() noexcept
+    {
+        return {};
+    }
+    virtual bool isFITKBacked() const noexcept
+    {
+        return false;
+    }
+    virtual QString adapterName() const
+    {
+        return QStringLiteral("test-registration-adapter");
+    }
     virtual bool registerGlobalData(const QString& key,
                                     ManagedService& service,
                                     QString* errorDetail) = 0;

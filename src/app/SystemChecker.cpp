@@ -62,11 +62,9 @@ QStringList SystemChecker::defaultRequiredToolFiles()
 {
     return {
         QStringLiteral("cmake/OCCConfig.cmake"),
-        QStringLiteral("Win64/VTK942/bin/vtkCommonCore-9.4.dll"),
         QStringLiteral("Win64/VTK942/bind/vtkCommonCore-9.4d.dll"),
-        QStringLiteral("Win64/hdf5/bin/hdf5.dll"),
+        QStringLiteral("Win64/OCC/bind/TKernel.dll"),
         QStringLiteral("Win64/hdf5/bind/hdf5_D.dll"),
-        QStringLiteral("Win64/SARibbon/bin/SARibbonBar.dll"),
         QStringLiteral("Win64/SARibbon/bind/SARibbonBard.dll"),
         QStringLiteral("Win64/gmsh/gmsh.exe")};
 }
