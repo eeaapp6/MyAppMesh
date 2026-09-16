@@ -17,4 +17,11 @@ if(EXISTS "${_forbidden}")
     message(FATAL_ERROR "Forbidden non-Debug artifact detected: ${_forbidden}")
 endif()
 
+if(NOT EXISTS "${RUNTIME_DIR}/SARibbonBard.dll")
+    message(FATAL_ERROR "Expected Debug SARibbon runtime is missing: ${RUNTIME_DIR}/SARibbonBard.dll")
+endif()
+if(EXISTS "${RUNTIME_DIR}/SARibbonBar.dll")
+    message(FATAL_ERROR "Forbidden non-Debug artifact detected: ${RUNTIME_DIR}/SARibbonBar.dll")
+endif()
+
 message(STATUS "Verified Debug-only runtime: ${_expected}")

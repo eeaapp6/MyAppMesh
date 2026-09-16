@@ -18,13 +18,11 @@ The Tools package has been checked for OCC 7.4.0 beta, VTK 9.4.2, HDF5 1.14.0, C
 Run these commands from the repository root in PowerShell:
 
 ```powershell
-if (-not $env:VS2017_VCVARS) { throw 'Set VS2017_VCVARS to the VS2017 vcvarsall.bat file.' }
-cmd.exe /d /s /c ('call "' + $env:VS2017_VCVARS + '" x64 10.0.17763.0 && where cl && where rc')
+cmd.exe /d /s /c "scripts\build-vs2017.cmd"
 
 $repoRoot = (Resolve-Path '.').Path
 $toolsDir = Join-Path $repoRoot 'dependencies\FastCAECodeBase\Tools'
-if (-not $env:QT_ROOT) { throw 'Set QT_ROOT to the Qt 5.14.2 msvc2017_64 directory.' }
-$qtDir = $env:QT_ROOT
+$qtDir = if ($env:QT_ROOT) { $env:QT_ROOT } else { 'C:\Qt\Qt5.14.2\5.14.2\msvc2017_64' }
 
 Test-Path "$toolsDir\cmake\OCCConfig.cmake"
 Test-Path "$toolsDir\Win64\VTK942\bind\vtkCommonCore-9.4d.dll"
@@ -48,7 +46,7 @@ Expected results are ten `True` values followed by Gmsh `4.5.4`, Python `3.7.0`,
 cmd.exe /d /s /c ('call "' + $env:VS2017_VCVARS + '" x64 10.0.17763.0 && if exist "%WindowsSdkDir%Include\10.0.17763.0" echo SDK ready')
 ```
 
-The environment command must resolve `cl.exe` and `rc.exe`, and the candidate check must print the installed `10.0.17763.0` include directory.
+`VS2017_VCVARS`, `QT_ROOT`, `CMAKE_EXE` and `CTEST_EXE` are optional override variables. With no overrides, the build script discovers VS2017 through PATH/Installer `vswhere`, then edition fallback paths; Qt through `QT_ROOT`, PATH `qmake`, then the verified Qt path; and CMake/CTest through the Qt tool bundle then PATH. The environment command must resolve `cl.exe` and `rc.exe`, and the candidate check must print the installed `10.0.17763.0` include directory.
 
 ## Configure, build and test
 
@@ -152,7 +150,7 @@ ctest --test-dir build\vs2017-x64-debug -C Debug `
   --repeat until-fail:5 --output-on-failure
 ```
 
-The verified T009 fixture uses four Geometry writers creating 120 objects, four Mesh writers creating 80 associated meshes, bounded snapshot loops, condition-variable start gates and a condition-controlled creator/removal checkpoint. Every phase ends with the available Runtime, GeometryManager and MeshManager index validators. The T009 baseline was 23/23; after T010/T011 the complete Debug suite is 25/25. `cmake --build build\vs2017-x64-debug --config Release` must return a nonzero exit code under the Debug-only policy.
+The verified T009 fixture uses four Geometry writers creating 120 objects, four Mesh writers creating 80 associated meshes, bounded snapshot loops, condition-variable start gates and a condition-controlled creator/removal checkpoint. Every phase ends with the available Runtime, GeometryManager and MeshManager index validators. The T009 baseline was 23/23; after T010/T011 and the SARibbon audit the complete Debug suite is 26/26. `cmake --build build\vs2017-x64-debug --config Release` must return a nonzero exit code under the Debug-only policy.
 
 ## T010/T011 GUI shell and model widgets
 
@@ -163,9 +161,13 @@ cmake --build build\vs2017-x64-debug --config Debug
 ctest --test-dir build\vs2017-x64-debug -C Debug -R "t010|t011" --output-on-failure
 ```
 
-The expected result is 2/2 tests. T010 verifies main-window creation and destruction, central viewport/model-tree/console hosts, Qt widget injection and replacement ownership, dock visibility, the no-VTK placeholder, and failure isolation. T011 verifies empty and populated Runtime snapshots, stable ObjectId/type roles, hierarchy refresh, mutation routing through Runtime/GeometryManager/MeshManager, stale-node removal, invalid-refresh preservation, console levels, line limits, and queued worker-thread messages.
+The expected result is 3/3 focused tests including `t010.saribbon-debug-dependencies`. T010 verifies the real `SARibbonMainWindow`, non-empty ribbon, File/Project, View and Mesh categories/panels, action enablement, central viewport/model-tree/console hosts, QWidget injection and replacement ownership, dock visibility, the no-VTK placeholder, and failure isolation. T011 verifies ModelData event-driven synchronization for generic/geometry/mesh additions, rename, visibility, selection, reparent and deletion, failure isolation, worker-to-GUI queueing, event order, unbind/destruction safety, invalid-refresh preservation, console levels, line limits, and queued worker-thread messages.
 
-The current desktop shell deliberately uses a Qt menu/toolbar command area and a replaceable QWidget viewport placeholder. It does not claim the final SARibbon adapter, VTK/GraphData rendering, or picking. T013 retains the complete GUI/VTK five-second heartbeat test, and T026 retains the formal VTK viewport and GraphData integration.
+The desktop shell uses the audited Debug SARibbon adapter and a replaceable QWidget viewport placeholder. It does not claim VTK/GraphData rendering or picking; the central host is the T026 injection boundary. T013 retains the complete GUI/VTK five-second heartbeat test, and T026 retains the formal VTK viewport and GraphData integration.
+
+## T012 input dialogs
+
+Run `ctest --test-dir build\\vs2017-x64-debug -C Debug -R t012.dialogs --output-on-failure` to verify work-directory, generic generator and project Open/Save input dialogs. The suite proves invalid input is rejected with diagnostics and accepted values are returned without filesystem IO or business-task execution. T013/T014 remain outside this increment.
 
 ## UI responsiveness heartbeat
 

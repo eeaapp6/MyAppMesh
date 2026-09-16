@@ -12,11 +12,51 @@
 #include <optional>
 #include <set>
 #include <functional>
+#include <cstdint>
 
 namespace AppMesh::Model
 {
 class GeometryManager;
 class MeshManager;
+struct ModelChangeState;
+
+enum class ModelChangeType : quint8
+{
+    Added,
+    Updated,
+    Removed,
+    Reset
+};
+
+struct ModelChangeEvent
+{
+    ModelChangeType type = ModelChangeType::Reset;
+    ObjectId objectId = InvalidObjectId;
+    std::optional<DataObjectSnapshot> snapshot;
+    quint64 sequence = 0;
+};
+
+class ModelChangeSubscription final
+{
+public:
+    ModelChangeSubscription() = default;
+    ModelChangeSubscription(const ModelChangeSubscription&) = delete;
+    ModelChangeSubscription& operator=(const ModelChangeSubscription&) = delete;
+    ModelChangeSubscription(ModelChangeSubscription&& other) noexcept;
+    ModelChangeSubscription& operator=(ModelChangeSubscription&& other) noexcept;
+    ~ModelChangeSubscription();
+
+    void reset() noexcept;
+    bool isActive() const noexcept;
+    bool isSourceAlive() const noexcept;
+
+private:
+    friend class ApplicationRuntime;
+    ModelChangeSubscription(std::weak_ptr<ModelChangeState> state, quint64 id) noexcept;
+
+    std::weak_ptr<ModelChangeState> m_state;
+    quint64 m_id = 0;
+};
 
 struct CreateObjectRequest
 {
@@ -74,6 +114,7 @@ class ApplicationRuntime final : public Common::ManagedService
 public:
     using BeforeDomainPublishCheckpoint =
         std::function<Common::OperationResult(ObjectId, DataObjectType)>;
+    using ModelChangeCallback = std::function<void(const ModelChangeEvent&)>;
 
     explicit ApplicationRuntime(
         ObjectId firstObjectId = 1,
@@ -101,6 +142,8 @@ public:
                                              const QVariant& value);
     Common::OperationResult removeMetadataValue(ObjectId id, const QString& key);
     Common::OperationResult removeObject(ObjectId id);
+
+    ModelChangeSubscription subscribe(ModelChangeCallback callback);
 
     int objectCount() const;
     Common::OperationResult validateIndexes() const;
@@ -134,6 +177,10 @@ private:
     Common::OperationResult removeObjectLocked(ObjectId id,
                                                std::optional<DataObjectType> expectedType);
     void consumeNextObjectIdLocked(ObjectId allocatedId) noexcept;
+    void emitChange(ModelChangeType type,
+                    ObjectId objectId,
+                    std::optional<DataObjectSnapshot> snapshot = {});
+    void closeChangeSource() noexcept;
 
     mutable QReadWriteLock m_lock;
     std::map<ObjectId, std::unique_ptr<DataObject>> m_objects;
@@ -145,5 +192,6 @@ private:
     ObjectId m_nextObjectId = 1;
     bool m_idExhausted = false;
     BeforeDomainPublishCheckpoint m_beforeDomainPublish;
+    std::shared_ptr<ModelChangeState> m_changeState;
 };
 }

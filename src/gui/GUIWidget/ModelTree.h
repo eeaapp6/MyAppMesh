@@ -1,7 +1,7 @@
 #pragma once
 
 #include "common/AppDiagnostic.h"
-#include "model/ModelData/DataObject.h"
+#include "model/ModelData/ApplicationRuntime.h"
 
 #include <QAbstractItemModel>
 #include <QTreeView>
@@ -103,6 +103,7 @@ public:
                                  Model::MeshManager* meshManager);
     void unbind();
     bool isBound() const noexcept;
+    bool lastAutomaticRefreshOccurredOnGuiThread() const noexcept;
 
     Common::OperationResult refreshFromRuntime();
     Common::OperationResult requestRename(Model::ObjectId id, const QString& name);
@@ -139,12 +140,16 @@ private:
                                          const QString& message,
                                          const QString& detail) const;
     void report(const Common::OperationResult& result) const;
+    void handleModelChange(const Model::ModelChangeEvent& event);
 
     ModelTreeModel* m_model = nullptr;
     Model::ApplicationRuntime* m_runtime = nullptr;
     Model::GeometryManager* m_geometryManager = nullptr;
     Model::MeshManager* m_meshManager = nullptr;
+    Model::ModelChangeSubscription m_subscription;
     DiagnosticHandler m_diagnosticHandler;
     bool m_refreshing = false;
+    quint64 m_lastEventSequence = 0;
+    bool m_lastAutomaticRefreshOnGuiThread = false;
 };
 }

@@ -5,11 +5,93 @@
 
 #include <algorithm>
 #include <limits>
+#include <mutex>
 #include <new>
 #include <utility>
+#include <vector>
 
 namespace AppMesh::Model
 {
+struct ModelChangeState
+{
+    mutable std::mutex mutex;
+    std::recursive_mutex deliveryMutex;
+    std::map<quint64, ApplicationRuntime::ModelChangeCallback> callbacks;
+    quint64 nextSubscriptionId = 1;
+    quint64 nextSequence = 1;
+    bool sourceAlive = true;
+};
+
+ModelChangeSubscription::ModelChangeSubscription(std::weak_ptr<ModelChangeState> state,
+                                                 quint64 id) noexcept
+    : m_state(std::move(state)), m_id(id)
+{
+}
+
+ModelChangeSubscription::ModelChangeSubscription(ModelChangeSubscription&& other) noexcept
+    : m_state(std::move(other.m_state)), m_id(other.m_id)
+{
+    other.m_id = 0;
+}
+
+ModelChangeSubscription& ModelChangeSubscription::operator=(
+    ModelChangeSubscription&& other) noexcept
+{
+    if (this != &other)
+    {
+        reset();
+        m_state = std::move(other.m_state);
+        m_id = other.m_id;
+        other.m_id = 0;
+    }
+    return *this;
+}
+
+ModelChangeSubscription::~ModelChangeSubscription()
+{
+    reset();
+}
+
+void ModelChangeSubscription::reset() noexcept
+{
+    if (m_id != 0)
+    {
+        if (const auto state = m_state.lock())
+        {
+            std::lock_guard<std::mutex> guard(state->mutex);
+            state->callbacks.erase(m_id);
+        }
+    }
+    m_state.reset();
+    m_id = 0;
+}
+
+bool ModelChangeSubscription::isActive() const noexcept
+{
+    if (m_id == 0)
+    {
+        return false;
+    }
+    const auto state = m_state.lock();
+    if (!state)
+    {
+        return false;
+    }
+    std::lock_guard<std::mutex> guard(state->mutex);
+    return state->sourceAlive && state->callbacks.find(m_id) != state->callbacks.end();
+}
+
+bool ModelChangeSubscription::isSourceAlive() const noexcept
+{
+    const auto state = m_state.lock();
+    if (!state)
+    {
+        return false;
+    }
+    std::lock_guard<std::mutex> guard(state->mutex);
+    return state->sourceAlive;
+}
+
 DomainObjectReservation::DomainObjectReservation(ApplicationRuntime* owner,
                                                  ObjectId id,
                                                  DataObjectType type) noexcept
@@ -63,11 +145,103 @@ ApplicationRuntime::ApplicationRuntime(
     ObjectId firstObjectId,
     BeforeDomainPublishCheckpoint beforeDomainPublish)
     : m_nextObjectId(firstObjectId == InvalidObjectId ? 1 : firstObjectId),
-      m_beforeDomainPublish(std::move(beforeDomainPublish))
+      m_beforeDomainPublish(std::move(beforeDomainPublish)),
+      m_changeState(std::make_shared<ModelChangeState>())
 {
 }
 
-ApplicationRuntime::~ApplicationRuntime() = default;
+ApplicationRuntime::~ApplicationRuntime()
+{
+    closeChangeSource();
+}
+
+ModelChangeSubscription ApplicationRuntime::subscribe(ModelChangeCallback callback)
+{
+    if (!callback || !m_changeState)
+    {
+        return {};
+    }
+    std::lock_guard<std::mutex> guard(m_changeState->mutex);
+    if (!m_changeState->sourceAlive || m_changeState->nextSubscriptionId == 0)
+    {
+        return {};
+    }
+    const quint64 id = m_changeState->nextSubscriptionId++;
+    m_changeState->callbacks.emplace(id, std::move(callback));
+    return ModelChangeSubscription(m_changeState, id);
+}
+
+void ApplicationRuntime::emitChange(ModelChangeType type,
+                                    ObjectId objectId,
+                                    std::optional<DataObjectSnapshot> snapshot)
+{
+    std::lock_guard<std::recursive_mutex> deliveryGuard(m_changeState->deliveryMutex);
+    std::vector<ModelChangeCallback> callbacks;
+    ModelChangeEvent event;
+    {
+        std::lock_guard<std::mutex> guard(m_changeState->mutex);
+        if (!m_changeState->sourceAlive)
+        {
+            return;
+        }
+        event = {type, objectId, std::move(snapshot), m_changeState->nextSequence++};
+        callbacks.reserve(m_changeState->callbacks.size());
+        for (const auto& entry : m_changeState->callbacks)
+        {
+            callbacks.push_back(entry.second);
+        }
+    }
+    for (const auto& callback : callbacks)
+    {
+        try
+        {
+            callback(event);
+        }
+        catch (...)
+        {
+            // Domain commits cannot be rolled back by an observer failure.
+        }
+    }
+}
+
+void ApplicationRuntime::closeChangeSource() noexcept
+{
+    if (!m_changeState)
+    {
+        return;
+    }
+    std::lock_guard<std::recursive_mutex> deliveryGuard(m_changeState->deliveryMutex);
+    std::vector<ModelChangeCallback> callbacks;
+    ModelChangeEvent event;
+    {
+        std::lock_guard<std::mutex> guard(m_changeState->mutex);
+        if (!m_changeState->sourceAlive)
+        {
+            return;
+        }
+        m_changeState->sourceAlive = false;
+        event = {ModelChangeType::Reset,
+                 InvalidObjectId,
+                 {},
+                 m_changeState->nextSequence++};
+        callbacks.reserve(m_changeState->callbacks.size());
+        for (const auto& entry : m_changeState->callbacks)
+        {
+            callbacks.push_back(entry.second);
+        }
+        m_changeState->callbacks.clear();
+    }
+    for (const auto& callback : callbacks)
+    {
+        try
+        {
+            callback(event);
+        }
+        catch (...)
+        {
+        }
+    }
+}
 
 QString ApplicationRuntime::normalizedName(const QString& name) const
 {
@@ -244,6 +418,8 @@ CreateObjectResult ApplicationRuntime::createObject(const CreateObjectRequest& r
     const auto created = m_objects.find(id);
     result.object = created->second->snapshot();
     consumeNextObjectIdLocked(id);
+    locker.unlock();
+    emitChange(ModelChangeType::Added, id, result.object);
     return result;
 }
 
@@ -496,7 +672,10 @@ PublishObjectResult ApplicationRuntime::publishDomainObject(
     m_reservedObjects.erase(reservedIterator);
     const auto published = m_objects.find(reservation.m_id);
     result.object = published->second->snapshot();
+    const ObjectId publishedId = reservation.m_id;
     reservation.reset();
+    locker.unlock();
+    emitChange(ModelChangeType::Added, publishedId, result.object);
     return result;
 }
 
@@ -653,6 +832,9 @@ Common::OperationResult ApplicationRuntime::renameObject(ObjectId id,
     object.m_name = uniqueName;
     auto& storedSuffix = m_nextNameSuffix[baseKey];
     storedSuffix = std::max(storedSuffix, nextSuffix);
+    const auto snapshot = object.snapshot();
+    locker.unlock();
+    emitChange(ModelChangeType::Updated, id, snapshot);
     return result;
 }
 
@@ -735,6 +917,9 @@ Common::OperationResult ApplicationRuntime::setParent(ObjectId id, ObjectId pare
         }
     }
     object.m_parentId = parentId;
+    const auto snapshot = object.snapshot();
+    locker.unlock();
+    emitChange(ModelChangeType::Updated, id, snapshot);
     return result;
 }
 
@@ -752,6 +937,9 @@ Common::OperationResult ApplicationRuntime::setVisible(ObjectId id, bool visible
         return result;
     }
     iterator->second->m_visible = visible;
+    const auto snapshot = iterator->second->snapshot();
+    locker.unlock();
+    emitChange(ModelChangeType::Updated, id, snapshot);
     return result;
 }
 
@@ -769,6 +957,9 @@ Common::OperationResult ApplicationRuntime::setSelected(ObjectId id, bool select
         return result;
     }
     iterator->second->m_selected = selected;
+    const auto snapshot = iterator->second->snapshot();
+    locker.unlock();
+    emitChange(ModelChangeType::Updated, id, snapshot);
     return result;
 }
 
@@ -798,6 +989,9 @@ Common::OperationResult ApplicationRuntime::setMetadataValue(ObjectId id,
         return result;
     }
     iterator->second->m_metadata.insert(cleanKey, value);
+    const auto snapshot = iterator->second->snapshot();
+    locker.unlock();
+    emitChange(ModelChangeType::Updated, id, snapshot);
     return result;
 }
 
@@ -825,6 +1019,9 @@ Common::OperationResult ApplicationRuntime::removeMetadataValue(ObjectId id, con
         return result;
     }
     iterator->second->m_metadata.remove(cleanKey);
+    const auto snapshot = iterator->second->snapshot();
+    locker.unlock();
+    emitChange(ModelChangeType::Updated, id, snapshot);
     return result;
 }
 
@@ -905,7 +1102,17 @@ Common::OperationResult ApplicationRuntime::removeObjectLocked(
 Common::OperationResult ApplicationRuntime::removeObject(ObjectId id)
 {
     QWriteLocker locker(&m_lock);
-    return removeObjectLocked(id, std::nullopt);
+    const auto iterator = m_objects.find(id);
+    const auto snapshot = iterator == m_objects.end()
+        ? std::optional<DataObjectSnapshot>{}
+        : std::optional<DataObjectSnapshot>{iterator->second->snapshot()};
+    auto result = removeObjectLocked(id, std::nullopt);
+    locker.unlock();
+    if (result.succeeded() && snapshot.has_value())
+    {
+        emitChange(ModelChangeType::Removed, id, snapshot);
+    }
+    return result;
 }
 
 Common::OperationResult ApplicationRuntime::removeTypedObject(ObjectId id,
@@ -922,7 +1129,17 @@ Common::OperationResult ApplicationRuntime::removeTypedObject(ObjectId id,
     }
 
     QWriteLocker locker(&m_lock);
-    return removeObjectLocked(id, expectedType);
+    const auto iterator = m_objects.find(id);
+    const auto snapshot = iterator == m_objects.end()
+        ? std::optional<DataObjectSnapshot>{}
+        : std::optional<DataObjectSnapshot>{iterator->second->snapshot()};
+    result = removeObjectLocked(id, expectedType);
+    locker.unlock();
+    if (result.succeeded() && snapshot.has_value())
+    {
+        emitChange(ModelChangeType::Removed, id, snapshot);
+    }
+    return result;
 }
 
 int ApplicationRuntime::objectCount() const

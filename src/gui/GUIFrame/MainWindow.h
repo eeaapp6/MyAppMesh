@@ -1,20 +1,21 @@
 #pragma once
 
-#include <QMainWindow>
+#include <SARibbonMainWindow.h>
 #include <QString>
 
 class QAction;
 class QDockWidget;
-class QMenu;
-class QToolBar;
 class QVBoxLayout;
 class QWidget;
+class SARibbonBar;
+class SARibbonCategory;
+class SARibbonPannel;
 
 namespace AppMesh::GUIFrame
 {
 // T010 owns only the desktop shell. Business widgets and the future VTK
 // viewport are supplied through the three injection points below.
-class MainWindow final : public QMainWindow
+class MainWindow final : public SARibbonMainWindow
 {
 public:
     explicit MainWindow(QWidget* parent = nullptr);
@@ -36,7 +37,7 @@ public:
     QDockWidget* modelTreeDock() const noexcept;
     QDockWidget* consoleDock() const noexcept;
     QWidget* centralViewportHost() const noexcept;
-    QToolBar* commandToolBar() const noexcept;
+    SARibbonBar* commandRibbon() const noexcept;
 
 private:
     void createCommandArea();
@@ -64,10 +65,9 @@ private:
     QVBoxLayout* m_consoleLayout = nullptr;
     QWidget* m_consoleWidget = nullptr;
 
-    QMenu* m_fileMenu = nullptr;
-    QMenu* m_viewMenu = nullptr;
-    QMenu* m_meshMenu = nullptr;
-    QToolBar* m_commandToolBar = nullptr;
+    SARibbonCategory* m_fileCategory = nullptr;
+    SARibbonCategory* m_viewCategory = nullptr;
+    SARibbonCategory* m_meshCategory = nullptr;
     QAction* m_exitAction = nullptr;
 };
 }

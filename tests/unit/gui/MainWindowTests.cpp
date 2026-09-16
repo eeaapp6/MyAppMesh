@@ -3,9 +3,15 @@
 #include "TestSupport.h"
 
 #include <QApplication>
+#include <QAction>
 #include <QDockWidget>
 #include <QPointer>
 #include <QWidget>
+
+#include <SARibbonBar.h>
+#include <SARibbonCategory.h>
+#include <SARibbonMainWindow.h>
+#include <SARibbonPannel.h>
 
 #include <memory>
 #include <stdexcept>
@@ -20,8 +26,30 @@ int main(int argc, char* argv[])
         suite.expect(window.centralViewportHost() != nullptr &&
                          window.modelTreeDock() != nullptr &&
                          window.consoleDock() != nullptr &&
-                         window.commandToolBar() != nullptr,
-                     QStringLiteral("main window creates viewport, docks and command area"));
+                         window.commandRibbon() != nullptr &&
+                         dynamic_cast<SARibbonMainWindow*>(&window) != nullptr,
+                     QStringLiteral("main window is a real SARibbon window with viewport and docks"));
+        auto* fileCategory = window.commandRibbon()->categoryByObjectName(
+            QStringLiteral("fileProjectCategory"));
+        auto* viewCategory = window.commandRibbon()->categoryByObjectName(
+            QStringLiteral("viewCategory"));
+        auto* meshCategory = window.commandRibbon()->categoryByObjectName(
+            QStringLiteral("meshCategory"));
+        suite.expect(fileCategory && viewCategory && meshCategory &&
+                         fileCategory->pannelByObjectName(QStringLiteral("projectPanel")) &&
+                         viewCategory->pannelByObjectName(QStringLiteral("viewPanelsPanel")) &&
+                         meshCategory->pannelByObjectName(QStringLiteral("meshGenerationPanel")),
+                     QStringLiteral("ribbon exposes File/Project, View and Mesh categories and panels"));
+        for (const auto* name : {"newProjectAction", "openProjectAction",
+                                 "saveProjectAction", "generateMeshAction"})
+        {
+            auto* action = window.findChild<QAction*>(QString::fromLatin1(name));
+            suite.expect(action && !action->isEnabled(),
+                         QStringLiteral("unfinished ribbon action remains disabled: %1")
+                             .arg(QString::fromLatin1(name)));
+        }
+        suite.expect(window.findChild<QAction*>(QStringLiteral("exitAction")) != nullptr,
+                     QStringLiteral("ribbon exposes an enabled Exit action"));
         suite.expect(window.viewportWidget() != nullptr &&
                          window.viewportWidget()->objectName() ==
                              QStringLiteral("viewportPlaceholder"),

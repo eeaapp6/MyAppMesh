@@ -36,15 +36,19 @@
 
 **Alternatives considered**: A permanent plain `QMainWindow` shell was rejected now that the required ribbon dependency is present. Making Qwt a mandatory dependency was rejected because it expands deployment without satisfying a current requirement.
 
-## Decision: Freeze the T010/T011 GUI seam at QWidget injection
+## Decision: Freeze the T010/T011 GUI seam at SARibbon plus QWidget injection
 
-**Decision**: T010 owns the `QMainWindow` shell, central replaceable viewport host, model-tree and console docks, and a minimal File/View/Mesh command area. It exposes non-owning injection calls for `QWidget` instances; after injection, normal Qt parent ownership controls destruction and replacement. T011 owns the model/view tree and console behavior only, never creates a main window or dock, and never stores `DataObject`, geometry, mesh, or FITK object pointers. Tree nodes contain value snapshots keyed by stable `ObjectId`.
+**Decision**: T010 owns a real `SARibbonMainWindow` from `Win64/SARibbon` (`include/SARibbon-2.0.1`, `libd/SARibbonBard.lib`, `bind/SARibbonBard.dll`), its File/Project, View and Mesh categories/panels, central replaceable viewport host, model-tree dock and console dock. It exposes non-owning injection calls for `QWidget` instances; after injection, normal Qt parent ownership controls destruction and replacement. T011 owns the model/view tree and console behavior only, never creates a main window or dock, and never stores `DataObject`, geometry, mesh, or FITK object pointers. Tree nodes contain value snapshots keyed by stable `ObjectId`.
 
 **Business routing**: The tree refreshes from `ApplicationRuntime::snapshots()`. Generic mutations use `ApplicationRuntime`; Geometry mutations use `GeometryManager`; Mesh mutations use `MeshManager`. T011 therefore requires the same narrow rename, parent, visibility, and selection forwarding surface on `MeshManager` that already exists on `GeometryManager`. These methods validate type/payload ownership before delegating common fields to the runtime; they do not create a second state store.
 
-**Thread and lifetime boundary**: GUI objects are created and destroyed on the GUI thread. The runtime and managers outlive bindings, bindings can be explicitly cleared before shutdown, and all queries return value snapshots. Console calls from worker threads are queued to the widget's GUI thread. T013 retains the five-second heartbeat test; T026 retains VTK/GraphData and picking.
+**Thread and lifetime boundary**: GUI objects are created and destroyed on the GUI thread. ModelData publishes value events (`Added`, `Updated`, `Removed`, `Reset`) through a thread-safe RAII subscription after write locks are released. `ModelTree::unbind()` and destruction cancel the subscription, while Runtime shutdown invalidates it safely. Worker events are queued with `QMetaObject::invokeMethod`, `QPointer` and value-captured snapshots. Console calls from worker threads use the same GUI queue. T013 retains the five-second heartbeat test; T026 retains VTK/GraphData and picking.
 
-**Ribbon boundary**: T010 may use a minimal Qt command area without expanding the audited FITK Debug allowlist. The bundled SARibbon headers and Debug binary remain the planned presentation adapter, but linking and staging that third-party runtime must be introduced only with its own explicit dependency target and validation evidence; the Qt command surface preserves the action seam until then.
+**Ribbon boundary**: T010 links only the explicit Debug imported target `APPMesh::SARibbon`; it is separate from the unchanged FITK allowlist (`FITKCore`, `FITKAppFramework`). `SARibbonBard.dll` depends on `Qt5Widgetsd.dll`, `Qt5Guid.dll`, `Qt5Cored.dll`, `MSVCP140D.dll`, `VCRUNTIME140D.dll` and `ucrtbased.dll`. No Release SARibbon or Release Qt/HDF5 artifact is staged. The central widget remains a T026 VTK/GraphData injection point; T010 does not claim VTK rendering.
+
+## Decision: T012 dialogs stop at validated requests
+
+`WorkDirectoryDialog`, `GeneratorDialog` and `ProjectDialog` are GUI-thread-only QDialogs that return value-semantic request structures. They validate boundary input and retain structured diagnostics, but never create directories, read or write projects, invoke HDF5/Gmsh/plugins, start threads or mutate ModelData. Generator parameters remain a generic `QVariantMap` with non-empty unique keys; project Open/Save extension policy is deferred to HDF5IO because no extension is frozen in this increment.
 
 ## Decision: HDF5 namespaces with best-effort plugin restoration
 

@@ -16,5 +16,8 @@ function(appmesh_stage_runtime target)
         COMMAND "${CMAKE_COMMAND}" -E copy_if_different
             "$<TARGET_FILE:APPMesh::HDF5>"
             "$<TARGET_FILE_DIR:${target}>"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+            "$<TARGET_FILE:APPMesh::SARibbon>"
+            "$<TARGET_FILE_DIR:${target}>"
         COMMENT "Staging Debug-only FastCAE Tools runtime")
 endfunction()

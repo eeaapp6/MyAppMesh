@@ -5,7 +5,10 @@
 #include "model/ModelData/MeshManager.h"
 
 #include <QItemSelection>
+#include <QMetaObject>
+#include <QPointer>
 #include <QSet>
+#include <QThread>
 
 #include <algorithm>
 #include <utility>
@@ -409,17 +412,58 @@ Common::OperationResult ModelTree::bind(Model::ApplicationRuntime* runtime,
                                         Model::GeometryManager* geometryManager,
                                         Model::MeshManager* meshManager)
 {
+    unbind();
     m_runtime = runtime;
     m_geometryManager = geometryManager;
     m_meshManager = meshManager;
-    return refreshFromRuntime();
+    if (!m_runtime)
+    {
+        return refreshFromRuntime();
+    }
+
+    const QPointer<ModelTree> guardedTree(this);
+    m_subscription = m_runtime->subscribe(
+        [guardedTree](const Model::ModelChangeEvent& event) {
+            if (!guardedTree)
+            {
+                return;
+            }
+            QMetaObject::invokeMethod(
+                guardedTree.data(),
+                [guardedTree, event] {
+                    if (guardedTree)
+                    {
+                        guardedTree->handleModelChange(event);
+                    }
+                },
+                Qt::QueuedConnection);
+        });
+    if (!m_subscription.isActive())
+    {
+        auto result = bindingError(Model::InvalidObjectId,
+                                   QStringLiteral("GUI-MODEL-TREE-SUBSCRIPTION-FAILED"),
+                                   QStringLiteral("The model tree could not subscribe to ModelData changes."),
+                                   QStringLiteral("The Runtime event source is unavailable."));
+        report(result);
+        unbind();
+        return result;
+    }
+
+    auto result = refreshFromRuntime();
+    if (!result.succeeded())
+    {
+        unbind();
+    }
+    return result;
 }
 
 void ModelTree::unbind()
 {
+    m_subscription.reset();
     m_runtime = nullptr;
     m_geometryManager = nullptr;
     m_meshManager = nullptr;
+    m_lastEventSequence = 0;
     m_refreshing = true;
     m_model->clear();
     m_refreshing = false;
@@ -427,12 +471,17 @@ void ModelTree::unbind()
 
 bool ModelTree::isBound() const noexcept
 {
-    return m_runtime != nullptr;
+    return m_runtime != nullptr && m_subscription.isSourceAlive();
+}
+
+bool ModelTree::lastAutomaticRefreshOccurredOnGuiThread() const noexcept
+{
+    return m_lastAutomaticRefreshOnGuiThread;
 }
 
 Common::OperationResult ModelTree::refreshFromRuntime()
 {
-    if (!m_runtime)
+    if (!m_runtime || !m_subscription.isSourceAlive())
     {
         auto result = bindingError(Model::InvalidObjectId,
                                    QStringLiteral("GUI-MODEL-TREE-RUNTIME-NOT-BOUND"),
@@ -455,6 +504,33 @@ Common::OperationResult ModelTree::refreshFromRuntime()
         report(result);
     }
     return result;
+}
+
+void ModelTree::handleModelChange(const Model::ModelChangeEvent& event)
+{
+    m_lastAutomaticRefreshOnGuiThread = QThread::currentThread() == thread();
+    if (event.sequence <= m_lastEventSequence)
+    {
+        return;
+    }
+    m_lastEventSequence = event.sequence;
+
+    if (event.type == Model::ModelChangeType::Reset ||
+        !m_subscription.isSourceAlive())
+    {
+        m_subscription.reset();
+        m_runtime = nullptr;
+        m_geometryManager = nullptr;
+        m_meshManager = nullptr;
+        m_refreshing = true;
+        m_model->clear();
+        m_refreshing = false;
+        return;
+    }
+
+    // T011 deliberately uses a full detached snapshot refresh. Incremental
+    // actor/tree updates remain a later GraphData optimization.
+    refreshFromRuntime();
 }
 
 Common::OperationResult ModelTree::requestRename(Model::ObjectId id, const QString& name)
@@ -590,7 +666,7 @@ Common::OperationResult ModelTree::routeRequest(Model::ObjectId id,
                                                 Request request,
                                                 const QVariant& value)
 {
-    if (!m_runtime)
+    if (!m_runtime || !m_subscription.isSourceAlive())
     {
         return bindingError(id,
                             QStringLiteral("GUI-MODEL-TREE-RUNTIME-NOT-BOUND"),

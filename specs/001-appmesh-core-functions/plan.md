@@ -170,7 +170,7 @@ T004 implements the composition root in this exact order:
 5. Initialize `GlobalDataFactory` through `IFastCAERegistrationAdapter`.
 6. Initialize `ComponentFactory` after global data succeeds.
 7. Execute `PyRegister`; an explicitly disabled Python capability is a valid no-op, while an enabled capability without an adapter fails.
-8. Create a verifiable minimal `QWidget` through `MainWindowGenerator`; T010 owns the formal Ribbon shell.
+8. Create the real `SARibbonMainWindow` through `MainWindowGenerator`; T010 owns the Debug SARibbon shell while its central QWidget remains the T026 VTK/GraphData injection point.
 9. Execute `PreWindowInitializer` and establish `SignalProcessor` connections.
 10. Initialize the plugin lifecycle boundary. T022-T025 own discovery and concrete plugin behavior.
 11. Execute `AppInitializer`.
@@ -210,11 +210,16 @@ Writes create an HDF5 context, write Version metadata, and invoke currently load
 
 ## Error Handling
 
+T012 dialogs return value-semantic requests only. Work-directory, generator and project inputs are validated at the GUI boundary; failures retain structured diagnostics. Dialogs do not create directories, perform project IO, invoke Gmsh/HDF5/plugins, start tasks or mutate ModelData. Project filename extension policy remains deferred to HDF5IO because no extension is frozen in this increment.
+
 Use `ErrorInfo { category, code, message, detail, recoverable, taskId, objectId, path }`. Categories include configuration, environment, input, validation, component, plugin, external-process, IO, project-compatibility, resource and extension. Internal codes are for diagnostics within a build but are not a public Python/HTTP compatibility promise in this release. User-facing messages are concise; logs include timestamp, thread, module, task/object IDs and sanitized paths. Failed imports, generation, reads and writes leave existing valid data untouched. Recent files are non-critical history: invalid, non-regular, duplicate or deleted entries are filtered during load and save and must not prevent otherwise valid settings from being persisted or restored.
 
 ## Testing Strategy
 
+The T012 GUI dialog suite uses temporary fixtures to cover path, parameter-key, overwrite, cancellation and GUI-thread validation without invoking business services or external processes.
+
 1. Unit-test ID/name invariants, mesh topology/set validation, concrete parameter validation, task state behavior and error reporting. Settings tests cover saving and loading stale recent-file entries plus mixed valid, duplicate and stale history while preserving case-insensitive deduplication and the configured maximum count.
+   T011 GUI tests cover ModelData Added/Updated/Removed/Reset notifications, automatic tree refresh, worker-to-GUI queueing, event ordering and unbind/destruction safety.
 2. Contract-test plugin discovery, API compatibility, capability registration, install rollback, unload cleanup and generator result validation.
 3. Contract-test HDF5 context creation, Version type/version checks, plugin read/write dispatch and failure reporting.
 4. Integration-test initialization order, real `FITKApplication` factory registration, the Debug FITK DLL allowlist, reverse rollback, FastCAE factories, VTK/GraphData synchronization, operator routing and UI-thread responsiveness. T041 additionally executes a non-blocking real-FITK smoke test and uses `dumpbin /dependents` to reject Release Qt/HDF5, unlisted FITK libraries and original APPMesh business DLLs. The responsiveness fixture keeps each target worker active for at least 5 seconds, runs a 100 ms `QTimer` on the UI thread, records at least 50 consecutive callbacks, fails when any adjacent callback interval exceeds 500 ms, and verifies one observed `running` state followed by exactly one terminal state.

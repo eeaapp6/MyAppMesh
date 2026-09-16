@@ -87,10 +87,24 @@ appmesh_add_unit_test(t010.main-window
     unit/gui/MainWindowTests.cpp)
 appmesh_add_unit_test(t011.model-widgets
     unit/gui/ModelWidgetsTests.cpp)
+appmesh_add_unit_test(t012.dialogs
+    unit/gui/DialogTests.cpp)
 set_tests_properties(
     t010.main-window
     t011.model-widgets
+    t012.dialogs
     PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+add_test(NAME t010.saribbon-debug-dependencies
+    COMMAND "${CMAKE_COMMAND}"
+        "-DDUMPBIN_EXECUTABLE=${APPMESH_DUMPBIN_EXECUTABLE}"
+        "-DSARIBBON_DLL=$<TARGET_FILE:APPMesh::SARibbon>"
+        "-DRUNTIME_DIR=$<TARGET_FILE_DIR:appmesh>"
+        "-DSOURCE_DIR=${CMAKE_SOURCE_DIR}"
+        "-DCONFIG=$<CONFIG>"
+        -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/VerifySARibbonDebugDependencies.cmake")
+set_tests_properties(t010.saribbon-debug-dependencies PROPERTIES
+    DEPENDS t001.debug-binary-dependencies)
 
 set_tests_properties(t009.mesh-validation-matrix PROPERTIES TIMEOUT 30)
 set_tests_properties(

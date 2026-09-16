@@ -4,12 +4,13 @@
 #include <QApplication>
 #include <QDockWidget>
 #include <QLabel>
-#include <QMenu>
-#include <QMenuBar>
 #include <QThread>
-#include <QToolBar>
 #include <QVBoxLayout>
 #include <QWidget>
+
+#include <SARibbonBar.h>
+#include <SARibbonCategory.h>
+#include <SARibbonPannel.h>
 
 namespace AppMesh::GUIFrame
 {
@@ -36,7 +37,7 @@ QAction* createDisabledAction(QObject* parent,
 }
 
 MainWindow::MainWindow(QWidget* parent)
-    : QMainWindow(parent)
+    : SARibbonMainWindow(parent, true)
 {
     Q_ASSERT(!qApp || QThread::currentThread() == qApp->thread());
 
@@ -83,8 +84,13 @@ void MainWindow::createContentHosts()
 
 void MainWindow::createCommandArea()
 {
-    m_fileMenu = menuBar()->addMenu(tr("&File"));
-    m_fileMenu->setObjectName(QStringLiteral("fileMenu"));
+    auto* ribbon = ribbonBar();
+    Q_ASSERT(ribbon);
+    ribbon->setObjectName(QStringLiteral("appMeshRibbonBar"));
+    m_fileCategory = ribbon->addCategoryPage(tr("File/Project"));
+    m_fileCategory->setObjectName(QStringLiteral("fileProjectCategory"));
+    auto* projectPanel = m_fileCategory->addPannel(tr("Project"));
+    projectPanel->setObjectName(QStringLiteral("projectPanel"));
     auto* newAction = createDisabledAction(this,
                                            tr("New Project"),
                                            QStringLiteral("newProjectAction"));
@@ -97,31 +103,29 @@ void MainWindow::createCommandArea()
     m_exitAction = new QAction(tr("Exit"), this);
     m_exitAction->setObjectName(QStringLiteral("exitAction"));
     connect(m_exitAction, &QAction::triggered, this, &QWidget::close);
-    m_fileMenu->addAction(newAction);
-    m_fileMenu->addAction(openAction);
-    m_fileMenu->addAction(saveAction);
-    m_fileMenu->addSeparator();
-    m_fileMenu->addAction(m_exitAction);
+    projectPanel->addLargeAction(newAction);
+    projectPanel->addLargeAction(openAction);
+    projectPanel->addLargeAction(saveAction);
+    projectPanel->addSeparator();
+    projectPanel->addLargeAction(m_exitAction);
 
-    m_viewMenu = menuBar()->addMenu(tr("&View"));
-    m_viewMenu->setObjectName(QStringLiteral("viewMenu"));
-    m_viewMenu->addAction(m_modelTreeDock->toggleViewAction());
-    m_viewMenu->addAction(m_consoleDock->toggleViewAction());
+    m_viewCategory = ribbon->addCategoryPage(tr("View"));
+    m_viewCategory->setObjectName(QStringLiteral("viewCategory"));
+    auto* dockPanel = m_viewCategory->addPannel(tr("Panels"));
+    dockPanel->setObjectName(QStringLiteral("viewPanelsPanel"));
+    m_modelTreeDock->toggleViewAction()->setObjectName(QStringLiteral("toggleModelTreeAction"));
+    m_consoleDock->toggleViewAction()->setObjectName(QStringLiteral("toggleConsoleAction"));
+    dockPanel->addLargeAction(m_modelTreeDock->toggleViewAction());
+    dockPanel->addLargeAction(m_consoleDock->toggleViewAction());
 
-    m_meshMenu = menuBar()->addMenu(tr("&Mesh"));
-    m_meshMenu->setObjectName(QStringLiteral("meshMenu"));
+    m_meshCategory = ribbon->addCategoryPage(tr("Mesh"));
+    m_meshCategory->setObjectName(QStringLiteral("meshCategory"));
+    auto* generationPanel = m_meshCategory->addPannel(tr("Generation"));
+    generationPanel->setObjectName(QStringLiteral("meshGenerationPanel"));
     auto* generateAction = createDisabledAction(this,
                                                 tr("Generate Mesh"),
                                                 QStringLiteral("generateMeshAction"));
-    m_meshMenu->addAction(generateAction);
-
-    m_commandToolBar = addToolBar(tr("Main Commands"));
-    m_commandToolBar->setObjectName(QStringLiteral("mainCommandToolBar"));
-    m_commandToolBar->setMovable(false);
-    m_commandToolBar->addAction(newAction);
-    m_commandToolBar->addAction(openAction);
-    m_commandToolBar->addSeparator();
-    m_commandToolBar->addAction(generateAction);
+    generationPanel->addLargeAction(generateAction);
 }
 
 bool MainWindow::replaceHostedWidget(QWidget* host,
@@ -239,8 +243,8 @@ QWidget* MainWindow::centralViewportHost() const noexcept
     return m_centralViewportHost;
 }
 
-QToolBar* MainWindow::commandToolBar() const noexcept
+SARibbonBar* MainWindow::commandRibbon() const noexcept
 {
-    return m_commandToolBar;
+    return ribbonBar();
 }
 }

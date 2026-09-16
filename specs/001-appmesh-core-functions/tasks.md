@@ -24,7 +24,7 @@
 
 - [X] T010 [P] [S3] 实现 `src/gui/GUIFrame/MainWindow.{h,cpp}`、Ribbon、Dock 和主窗口装配 | 前置任务: T004, T006, T008 | 影响模块: GUIFrame、FastCAE GUI | 需求编号: FR-011, FR-001 | 设计章节: 系统设计报告第 5.3、14.1 节 | 输入: ComponentFactory、GraphData 视图端口 | 输出: 主窗口和菜单入口 | 验收条件: 主窗口、Ribbon、模型树、控制台和三维区域可创建
 - [X] T011 [P] [S3] 实现 `src/gui/GUIWidget/ModelTree.{h,cpp}`、节点模型和 `ConsoleWidget` | 前置任务: T006, T008 | 影响模块: GUIWidget、控制台 | 需求编号: FR-005, FR-011 | 设计章节: 系统设计报告第 5.4、7 节 | 输入: ModelData 查询、任务/日志事件 | 输出: 几何/网格树和控制台 | 验收条件: 对象增删、命名、可见性、选择与数据同步，控制台展示诊断
-- [ ] T012 实现 `src/gui/GUIDialog/WorkDirectoryDialog`、`GeneratorDialog`、`ProjectDialog` 输入收集与校验 | 前置任务: T002, T010 | 影响模块: GUIDialog | 需求编号: FR-004, FR-008, FR-013 | 设计章节: plan.md GUIWidget/GUIDialog | 输入: 设置、具体生成器参数、文件路径 | 输出: 结构化参数 | 验收条件: 只收集/校验输入，不执行长任务；非法输入被拒绝
+- [X] T012 实现 `src/gui/GUIDialog/WorkDirectoryDialog`、`GeneratorDialog`、`ProjectDialog` 输入收集与校验 | 前置任务: T002, T010 | 影响模块: GUIDialog | 需求编号: FR-004, FR-008, FR-013 | 设计章节: plan.md GUIWidget/GUIDialog | 输入: 设置、具体生成器参数、文件路径 | 输出: 结构化参数 | 验收条件: 只收集/校验输入，不执行长任务；非法输入被拒绝
 - [ ] T013 [P] [S3] 编写 GUI 冒烟、FastCAE/VTK 装配和 UI 心跳测试 `tests/integration/gui/` | 前置任务: T010-T012 | 影响模块: GUIFrame、GUIWidget、GraphData | 需求编号: FR-011, FR-015, SC-001, SC-002 | 设计章节: plan.md Testing Strategy、quickstart.md UI responsiveness heartbeat | 输入: 最小运行时、持续至少 5 秒的受控后台任务 | 输出: GUI 集成测试与心跳采样报告 | 验收条件: UI 启动成功；UI 线程 100 ms `QTimer` 在后台任务运行期间连续记录至少 50 次回调，最大相邻回调间隔不超过 500 ms；至少观察到一次 `running` 且仅收到一个完成或失败终态
 
 ## Phase 4: 操作器和几何导入

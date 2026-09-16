@@ -6,11 +6,17 @@
 
 #include <QApplication>
 #include <QDateTime>
+#include <QElapsedTimer>
 #include <QEventLoop>
+#include <QPointer>
 #include <QThread>
 
+#include <atomic>
+#include <functional>
 #include <memory>
+#include <mutex>
 #include <thread>
+#include <vector>
 
 namespace
 {
@@ -52,6 +58,19 @@ public:
         return result;
     }
 };
+
+bool waitUntil(QApplication& application,
+               const std::function<bool()>& condition,
+               int timeoutMilliseconds = 3000)
+{
+    QElapsedTimer timer;
+    timer.start();
+    while (!condition() && timer.elapsed() < timeoutMilliseconds)
+    {
+        application.processEvents(QEventLoop::AllEvents, 25);
+    }
+    return condition();
+}
 }
 
 int main(int argc, char* argv[])
@@ -90,8 +109,12 @@ int main(int argc, char* argv[])
     const ObjectId groupId = group.object->id;
     const ObjectId geometryId = geometry.object->common.id;
     const ObjectId meshId = mesh.object->common.id;
-    suite.expect(tree.refreshFromRuntime().succeeded(),
-                 QStringLiteral("Runtime snapshots refresh the tree"));
+    suite.expect(waitUntil(application, [&] {
+                     return tree.objectModel()->indexForObject(groupId).isValid() &&
+                         tree.objectModel()->indexForObject(geometryId).isValid() &&
+                         tree.objectModel()->indexForObject(meshId).isValid();
+                 }),
+                 QStringLiteral("Generic, Geometry and Mesh additions synchronize automatically"));
 
     const auto geometryIndex = tree.objectModel()->indexForObject(geometryId);
     const auto meshIndex = tree.objectModel()->indexForObject(meshId);
@@ -122,6 +145,71 @@ int main(int argc, char* argv[])
                      changedMesh->common.parentId == groupId,
                  QStringLiteral("manager-owned authoritative state reflects tree requests"));
 
+    suite.expect(waitUntil(application, [&] {
+                     const auto geometryNode = tree.objectModel()->snapshotForObject(geometryId);
+                     const auto meshNode = tree.objectModel()->snapshotForObject(meshId);
+                     return geometryNode.has_value() && meshNode.has_value() &&
+                         geometryNode->name == QStringLiteral("Body") &&
+                         !geometryNode->visible &&
+                         meshNode->name == QStringLiteral("Surface Mesh") &&
+                         meshNode->selected && meshNode->parentId == groupId;
+                 }),
+                 QStringLiteral("rename, visibility, selection and parent changes synchronize automatically"));
+
+    std::vector<ModelChangeEvent> observedEvents;
+    std::mutex observedMutex;
+    auto eventSubscription = runtime.subscribe([&](const ModelChangeEvent& event) {
+        std::lock_guard<std::mutex> guard(observedMutex);
+        observedEvents.push_back(event);
+    });
+    std::atomic<ObjectId> workerObjectId{InvalidObjectId};
+    std::thread modelWorker([&] {
+        CreateObjectRequest request;
+        request.name = QStringLiteral("Worker Object");
+        request.type = DataObjectType::Generic;
+        const auto created = runtime.createObject(request);
+        if (created.object)
+        {
+            workerObjectId.store(created.object->id);
+            runtime.renameObject(created.object->id, QStringLiteral("Worker Renamed"));
+            runtime.setVisible(created.object->id, false);
+            runtime.setSelected(created.object->id, true);
+        }
+    });
+    modelWorker.join();
+    suite.expect(waitUntil(application, [&] {
+                     const auto node = tree.objectModel()->snapshotForObject(workerObjectId.load());
+                     return node.has_value() && node->name == QStringLiteral("Worker Renamed") &&
+                         !node->visible && node->selected;
+                 }) && tree.lastAutomaticRefreshOccurredOnGuiThread(),
+                 QStringLiteral("worker-thread events are queued and applied on the GUI thread"));
+    {
+        std::lock_guard<std::mutex> guard(observedMutex);
+        bool ordered = observedEvents.size() >= 4;
+        for (std::size_t i = 1; ordered && i < observedEvents.size(); ++i)
+        {
+            ordered = observedEvents[i - 1].sequence < observedEvents[i].sequence;
+        }
+        suite.expect(ordered && observedEvents.front().type == ModelChangeType::Added,
+                     QStringLiteral("model change events preserve a stable success order"));
+    }
+
+    const int beforeFailedMutation = tree.objectModel()->rowCount();
+    std::size_t eventsBeforeFailure = 0;
+    {
+        std::lock_guard<std::mutex> guard(observedMutex);
+        eventsBeforeFailure = observedEvents.size();
+    }
+    suite.expect(!runtime.renameObject(999999, QStringLiteral("Missing")).succeeded(),
+                 QStringLiteral("failed model mutation is rejected"));
+    application.processEvents(QEventLoop::AllEvents, 25);
+    {
+        std::lock_guard<std::mutex> guard(observedMutex);
+        suite.expect(observedEvents.size() == eventsBeforeFailure &&
+                         tree.objectModel()->rowCount() == beforeFailedMutation,
+                     QStringLiteral("failed operations emit no success event or GUI mutation"));
+    }
+
     QVector<DataObjectSnapshot> invalidSnapshots = runtime.snapshots();
     invalidSnapshots.front().parentId = 999999;
     const int previousRows = tree.objectModel()->rowCount();
@@ -131,10 +219,11 @@ int main(int argc, char* argv[])
 
     suite.expect(meshManager.removeMesh(meshId).succeeded() &&
                      geometryManager.removeGeometry(geometryId).succeeded() &&
-                     tree.refreshFromRuntime().succeeded() &&
-                     !tree.objectModel()->indexForObject(meshId).isValid() &&
-                     !tree.objectModel()->indexForObject(geometryId).isValid(),
-                 QStringLiteral("deleted objects leave no stale tree nodes"));
+                     waitUntil(application, [&] {
+                         return !tree.objectModel()->indexForObject(meshId).isValid() &&
+                             !tree.objectModel()->indexForObject(geometryId).isValid();
+                     }),
+                 QStringLiteral("deleted objects automatically leave no stale tree nodes"));
 
     AppMesh::Gui::ConsoleWidget console;
     console.setMaximumLineCount(3);
@@ -157,14 +246,9 @@ int main(int argc, char* argv[])
         console.appendInfo(QStringLiteral("worker-message"), QStringLiteral("worker"));
     });
     worker.join();
-    for (int attempt = 0;
-         attempt < 20 && !console.plainText().contains(QStringLiteral("worker-message"));
-         ++attempt)
-    {
-        application.processEvents(QEventLoop::AllEvents, 50);
-        QThread::msleep(5);
-    }
-    suite.expect(console.plainText().contains(QStringLiteral("worker-message")) &&
+    suite.expect(waitUntil(application, [&] {
+                     return console.plainText().contains(QStringLiteral("worker-message"));
+                 }) &&
                      console.lastMutationOccurredOnGuiThread(),
                  QStringLiteral("worker messages mutate the control only on the GUI thread"));
     console.clearMessages();
@@ -174,5 +258,33 @@ int main(int argc, char* argv[])
     tree.unbind();
     suite.expect(!tree.isBound() && tree.objectModel()->rowCount() == 0,
                  QStringLiteral("unbind clears non-owning service references"));
+    CreateObjectRequest afterUnbind;
+    afterUnbind.name = QStringLiteral("After Unbind");
+    afterUnbind.type = DataObjectType::Generic;
+    runtime.createObject(afterUnbind);
+    application.processEvents(QEventLoop::AllEvents, 25);
+    suite.expect(tree.objectModel()->rowCount() == 0,
+                 QStringLiteral("unbind cancels future model notifications"));
+
+    {
+        auto ownedRuntime = std::make_unique<ApplicationRuntime>();
+        auto ownedTree = std::make_unique<AppMesh::Gui::ModelTree>();
+        suite.expect(ownedTree->bind(ownedRuntime.get(), nullptr, nullptr).succeeded(),
+                     QStringLiteral("tree can bind to an independently owned Runtime"));
+        ownedRuntime.reset();
+        suite.expect(waitUntil(application, [&] { return !ownedTree->isBound(); }),
+                     QStringLiteral("Runtime shutdown invalidates the binding without use-after-free"));
+    }
+
+    {
+        ApplicationRuntime survivingRuntime;
+        QPointer<AppMesh::Gui::ModelTree> destroyedTree = new AppMesh::Gui::ModelTree;
+        destroyedTree->bind(&survivingRuntime, nullptr, nullptr);
+        delete destroyedTree.data();
+        survivingRuntime.createObject(afterUnbind);
+        application.processEvents(QEventLoop::AllEvents, 25);
+        suite.expect(destroyedTree.isNull(),
+                     QStringLiteral("destroyed ModelTree safely unsubscribes while Runtime survives"));
+    }
     return suite.result();
 }
