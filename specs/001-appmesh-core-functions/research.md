@@ -50,6 +50,14 @@
 
 `WorkDirectoryDialog`, `GeneratorDialog` and `ProjectDialog` are GUI-thread-only QDialogs that return value-semantic request structures. They validate boundary input and retain structured diagnostics, but never create directories, read or write projects, invoke HDF5/Gmsh/plugins, start threads or mutate ModelData. Generator parameters remain a generic `QVariantMap` with non-empty unique keys; project Open/Save extension policy is deferred to HDF5IO because no extension is frozen in this increment.
 
+## Decision: T014 defines a narrow APPMesh operator/task contract above FITKCore
+
+**FITK audit**: The already allowlisted `FITKCore` exposes `FITKAbstractOperator` with mutable `QVariant` arguments and QObject signals, `FITKOperatorRepo` for keyed creation/ownership, `FITKThreadTask` for QRunnable progress/completion signals, and `FITKThreadPool` for execution and waiting. These are stable public registration and scheduling seams, but they do not define APPMesh immutable input snapshots, structured `ErrorInfo`, detached task queries or the required single-terminal event vocabulary.
+
+**Decision**: `appmesh_operators_interface` is a Qt Core-only static contract library. `IOperator` accepts a const value input and returns `OperatorResult`; `Task` is a mutex-protected state holder that returns snapshots and per-task sequenced events but starts no thread and stores no observer. A future adapter in T015/T019 may register concrete APPMesh operators with `FITKOperatorRepo` and schedule execution through `FITKThreadTask`/`FITKThreadPool`. T014 does not inherit from FITK classes, access the repository singleton, implement TaskService, or expand the FITK DLL allowlist.
+
+**Rationale**: This preserves FITK ownership of repository/thread mechanics while giving APPMesh a GUI-independent business contract that can be tested without QObject ownership or worker scheduling. It also prevents FITK pointers and mutable argument maps from becoming the public task query surface.
+
 ## Decision: HDF5 namespaces with best-effort plugin restoration
 
 **Rationale**: HDF5 is required by the design report. Base paths remain stable while plugins own namespaced payloads. The clarified current scope only promises best-effort restoration when project type/version and required plugins match.

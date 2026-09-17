@@ -29,7 +29,7 @@
 
 ## Phase 4: 操作器和几何导入
 
-- [ ] T014 [P] [S4] 定义 `src/operators/OperatorsInterface/IOperator`、`Task`、`ErrorInfo`、事件和结果通知接口 | 前置任务: T005, T004 | 影响模块: OperatorsInterface、TaskService | 需求编号: FR-009, FR-015, FR-020, FR-021 | 设计章节: plan.md Core Interfaces; data-model.md Task/ErrorInfo | 输入: FastCAE 操作器/线程池接口 | 输出: 操作器和任务契约 | 验收条件: GUI/业务执行分离；状态 executing/success/failure；错误字段完整
+- [X] T014 [P] [S4] 定义 `src/operators/OperatorsInterface/IOperator`、`Task`、`ErrorInfo`、事件和结果通知接口 | 前置任务: T005, T004 | 影响模块: OperatorsInterface、TaskService | 需求编号: FR-009, FR-015, FR-020, FR-021 | 设计章节: plan.md Core Interfaces; data-model.md Task/ErrorInfo | 输入: FastCAE 操作器/线程池接口 | 输出: 操作器和任务契约 | 验收条件: GUI/业务执行分离；状态 executing/success/failure；错误字段完整
 - [ ] T015 实现 `ImportGeometryOperator`、`OperatorsModel::TaskService` 和 `OperatorsGUI` 路由 | 前置任务: T010, T012, T014 | 影响模块: OperatorsModel、OperatorsGUI | 需求编号: FR-006, FR-009, FR-015 | 设计章节: 系统设计报告第 6.1、14.4 节 | 输入: 文件路径、工作目录、几何 IO 适配器 | 输出: 异步导入任务 | 验收条件: 成功后原子提交 GeometryObject；失败不改变工程并显示诊断
 - [ ] T016 [P] [S4] 接入首版必选几何格式适配器 `src/io/GeometryIO/` 并声明格式能力 | 前置任务: T015 | 影响模块: GeometryIO、FITK 适配 | 需求编号: FR-006, FR-012 | 设计章节: plan.md Module Boundaries; spec.md Clarifications | 输入: 已冻结的 BRep/STEP/STP/IGES/IGS 清单 | 输出: 格式注册、读取和校验适配器 | 验收条件: 清单内有效文件可导入；损坏/空文件/不支持版本有错误；清单变更同步测试夹具
 - [ ] T017 [P] [S4] 编写几何导入单元、失败和端到端测试 `tests/integration/geometry/` | 前置任务: T015, T016 | 影响模块: OperatorsModel、GeometryIO、ModelData | 需求编号: FR-006, FR-020, SC-008 | 设计章节: quickstart.md End-to-end checks | 输入: 有效/无效/超内存文件 | 输出: 自动化验收结果 | 验收条件: 成功刷新树/视图；失败无残留；受控退出保留最后有效数据

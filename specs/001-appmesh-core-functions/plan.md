@@ -146,7 +146,7 @@ Dependency direction is strictly `FastCAE base -> FastCAE components -> APPMesh 
 - `MeshManager`: registers `MeshDataCreator`s, creates/removes `MeshData`, validates kernels, and maintains geometry references.
 - `MeshData`/`MeshKernel`: represent generator metadata, parameters, dimension, nodes, elements, sets, components and source geometry ID.
 - `OperatorsInterface::IOperator`: separates GUI argument collection from professional execution and emits task/result/error events.
-- `OperatorsModel::TaskService`: schedules immutable input snapshots, exposes observable execution, success and failure results, and commits only validated results. No cross-module task state machine is defined in the first release.
+- `OperatorsModel::TaskService`: schedules T014 immutable input snapshots, publishes the frozen Created/Executing/Succeeded/Failed contract, and commits only validated results. Scheduling, FITK thread adaptation and observer dispatch begin in T015; cancellation is not defined in the first release.
 - `OperatorsGUI`: binds actions and dialogs to operators and updates UI on the main thread.
 - `GraphData`: maps model entities to VTK/FastCAE actors, performs incremental refresh and translates picking results to stable object/entity IDs.
 - `FITK_Plugins` uses the FastCAE plugin base, manager and concrete driver interfaces; no universal plugin metadata or parameter schema is required in the first release.

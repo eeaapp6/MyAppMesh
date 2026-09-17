@@ -182,6 +182,19 @@ ctest --test-dir build\vs2017-x64-debug -C Debug -R "^t013\." --output-on-failur
 
 The two tests deliberately use the placeholder viewport. The current audited FITK Debug allowlist contains only `FITKCore` and `FITKAppFramework`; adding `FITKRenderWindowVTK` merely to make this test pass would violate the dependency boundary. Therefore these checks do not claim FastCAE/VTK rendering coverage, and T013 remains open until the formal VTK assembly is available through the planned T026 boundary.
 
+## T014 operator and task contracts
+
+Build and run the Qt Core-only contract test in Debug:
+
+```powershell
+cmake --build build\vs2017-x64-debug --config Debug
+ctest --test-dir build\vs2017-x64-debug -C Debug -R "^t014" --output-on-failure
+```
+
+The expected focused result is 1/1 and the complete Debug suite is 30/30. `t014.operators-interface` verifies monotonic nonzero `TaskId` allocation and exhaustion, immutable inputs, detached snapshots, UTC timestamps, 0-100 progress, Diagnostic/ErrorInfo round trips, mutually exclusive OperatorResult values, exception conversion, task-local event sequence and the only legal state transitions: `Created -> Executing -> Succeeded` or `Created -> Executing -> Failed`. Cancellation, pause and retry are unsupported.
+
+`IOperator` performs business validation and execution against const input values; it does not accept QWidget, schedule a thread or update the GUI. T015 owns TaskService, FITK operator-repository/thread-pool adaptation and observer dispatch. T013 remains open for its formal VTK viewport boundary.
+
 ## UI responsiveness heartbeat
 
 Use the same deterministic heartbeat assertion for geometry import, Gmsh generation, project open/save and large-file IO:

@@ -17,6 +17,7 @@ struct Diagnostic
     QString path;
     QString stage;
     QString objectId;
+    QString taskId;
 };
 
 struct OperationResult

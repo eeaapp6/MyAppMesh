@@ -140,7 +140,11 @@ T009 remains responsible for implementation, but T006-T008 must leave seams for 
 
 ## Task
 
-Fields: task ID, operation type, immutable input summary, observable execution result, phase/progress when provided by the driver, result reference, `ErrorInfo`, timestamps and diagnostics. The first release exposes only observable executing, success and failure results; no cross-module task state machine or cancellation transition is defined. This is T014 scope and is not part of the T006-T008 contract.
+`TaskId` is a process-local monotonic `quint64`; zero is invalid, allocated IDs are never reused, and exhaustion is reported without wraparound. `Task` stores a copied `OperatorInput` containing an operation key, parameter snapshot, source `ObjectId` values and optional description. It stores no UI, manager, runtime, FITK object or file-handle pointer.
+
+The frozen states are `Created`, `Executing`, `Succeeded` and `Failed`. The only legal transitions are `Created -> Executing`, `Executing -> Succeeded` and `Executing -> Failed`. Created is a submission-time state, not background execution. Succeeded and Failed are mutually exclusive terminal states; no transition, progress, result or business diagnostic is accepted after either terminal state. Cancellation, pause and retry are not defined.
+
+`Task` protects its narrow mutable state with one mutex and returns detached `TaskSnapshot` values. It records UTC creation/start/completion timestamps, optional 0-100 progress and phase, an optional value-semantic result reference, diagnostics and an optional primary `ErrorInfo`. It starts no thread and stores no observer. Each accepted update returns a value `TaskEvent` with a task-local monotonic sequence covering Started, ProgressChanged, DiagnosticReported, Succeeded or Failed. A future TaskService owns scheduling and observer dispatch.
 
 ## Plugin Metadata
 
@@ -158,4 +162,4 @@ Represents an operation received through an available Python/HTTP/AI wrapper. Ex
 
 ## ErrorInfo
 
-`category`, `code`, `message`, `detail`, `recoverable`, `taskId`, `objectId` and `path`. Codes are diagnostic identifiers in this release, not a promised stable external API. This formal interface starts at T014; earlier ModelData tasks use `Common::Diagnostic` as described above.
+`category`, `code`, `message`, `detail`, `recoverable`, `taskId`, `objectId` and `path`. Code and message must be non-empty. `ErrorInfo` is a copyable/movable value and converts losslessly to and from `Common::Diagnostic`; the latter now carries optional string-form task/object IDs for this boundary. Codes are diagnostic identifiers in this release, not a promised stable external API. Earlier ModelData tasks continue using `Common::Diagnostic` directly.

@@ -43,6 +43,13 @@ function(appmesh_add_model_test target source)
     add_test(NAME ${target} COMMAND "$<TARGET_FILE:${target}>")
 endfunction()
 
+function(appmesh_add_operator_test target source)
+    add_executable(${target} "${source}")
+    target_link_libraries(${target} PRIVATE appmesh_operators_interface Qt5::Core)
+    target_include_directories(${target} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+    add_test(NAME ${target} COMMAND "$<TARGET_FILE:${target}>")
+endfunction()
+
 appmesh_add_unit_test(t002.system-checker unit/app/SystemCheckerTests.cpp)
 target_compile_definitions(t002.system-checker PRIVATE
     APPMESH_TEST_TOOLS_DIR="${TOOLS_DIR}"
@@ -93,6 +100,8 @@ appmesh_add_unit_test(t013.gui-smoke
     integration/gui/GuiSmokeTests.cpp)
 appmesh_add_unit_test(t013.ui-heartbeat
     integration/gui/UiHeartbeatTests.cpp)
+appmesh_add_operator_test(t014.operators-interface
+    unit/operators/OperatorsInterfaceTests.cpp)
 set_tests_properties(
     t010.main-window
     t011.model-widgets
