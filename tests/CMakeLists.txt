@@ -50,6 +50,22 @@ function(appmesh_add_operator_test target source)
     add_test(NAME ${target} COMMAND "$<TARGET_FILE:${target}>")
 endfunction()
 
+function(appmesh_add_operator_model_test target source)
+    add_executable(${target} "${source}")
+    target_link_libraries(${target}
+        PRIVATE appmesh_operators_model appmesh_operators_fitk Qt5::Core)
+    target_include_directories(${target} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+    add_test(NAME ${target} COMMAND "$<TARGET_FILE:${target}>")
+endfunction()
+
+function(appmesh_add_operator_gui_test target source)
+    add_executable(${target} "${source}")
+    target_link_libraries(${target}
+        PRIVATE appmesh_operators_gui appmesh_operators_fitk Qt5::Core Qt5::Widgets)
+    target_include_directories(${target} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+    add_test(NAME ${target} COMMAND "$<TARGET_FILE:${target}>")
+endfunction()
+
 appmesh_add_unit_test(t002.system-checker unit/app/SystemCheckerTests.cpp)
 target_compile_definitions(t002.system-checker PRIVATE
     APPMESH_TEST_TOOLS_DIR="${TOOLS_DIR}"
@@ -102,16 +118,28 @@ appmesh_add_unit_test(t013.ui-heartbeat
     integration/gui/UiHeartbeatTests.cpp)
 appmesh_add_operator_test(t014.operators-interface
     unit/operators/OperatorsInterfaceTests.cpp)
+appmesh_add_operator_model_test(t015.task-service
+    unit/operators/TaskServiceTests.cpp)
+appmesh_add_operator_model_test(t015.import-geometry
+    unit/operators/ImportGeometryOperatorTests.cpp)
+appmesh_add_operator_gui_test(t015.geometry-import-controller
+    integration/gui/GeometryImportControllerTests.cpp)
 set_tests_properties(
     t010.main-window
     t011.model-widgets
     t012.dialogs
     t013.gui-smoke
     t013.ui-heartbeat
+    t015.geometry-import-controller
     PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
 set_tests_properties(t013.gui-smoke PROPERTIES TIMEOUT 30)
 set_tests_properties(t013.ui-heartbeat PROPERTIES TIMEOUT 60)
+set_tests_properties(
+    t015.task-service
+    t015.import-geometry
+    t015.geometry-import-controller
+    PROPERTIES TIMEOUT 30)
 
 add_test(NAME t010.saribbon-debug-dependencies
     COMMAND "${CMAKE_COMMAND}"

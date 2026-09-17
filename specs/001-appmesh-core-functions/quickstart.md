@@ -197,6 +197,27 @@ The expected focused result is 1/1 and the complete Debug suite is 30/30. `t014.
 
 `IOperator` performs business validation and execution against const input values; it does not accept QWidget, schedule a thread or update the GUI. T015 owns TaskService, FITK operator-repository/thread-pool adaptation and observer dispatch. T013 is complete for the Phase 3 GUI shell; formal VTK work remains independently open in T026-T028.
 
+## T015 asynchronous geometry-import route
+
+Build and run the focused Debug checks:
+
+```powershell
+cmake --build build\vs2017-x64-debug --config Debug
+ctest --test-dir build\vs2017-x64-debug -C Debug -R "t015" --output-on-failure
+ctest --test-dir build\vs2017-x64-debug -C Debug --repeat until-fail:5 `
+  -R "^t015\.task-service$" --output-on-failure
+```
+
+The focused result is 3/3 and the TaskService concurrency/lifecycle test passes five consecutive repetitions. `FITKTaskExecutor` submits an auto-deleted private `FITKThreadTask` to the existing `FITKThreadPool`; it tracks only its own value-captured callables for bounded shutdown and does not create another production thread pool. The FITK repository remains the framework registration/ownership boundary, while APPMesh `IOperator` retains its immutable execution contract because `FITKAbstractOperator` exposes no compatible execution function.
+
+`TaskService` owns `Task` records, detached queries and observer delivery. It never invokes an operator, observer or QWidget while holding the task/observer registry locks. A valid returned TaskId observes `Started`, optional progress/diagnostics, and exactly one `Succeeded` or `Failed` event. Executor rejection transitions the already-created Task to Failed; stop rejects new work and boundedly drains accepted work. Cancellation, pause, retry and persistence remain unsupported.
+
+`ImportGeometryOperator` uses a shared, injected `GeometryReaderRegistry`. Readers return staged `GeometryObject` values and never commit ModelData, create tasks or expose FITK/OCC pointers. The operator validates absolute file/work paths, parameter types, reader key and extension, then commits only through `GeometryManager`; reader, validation, reservation or publication failure leaves existing geometry, payloads, reservations and names unchanged. T015 tests use only fake `.fake` files. Real BRep/STEP/STP/IGES/IGS readers remain T016, and their end-to-end/SC-002 acceptance remains T017.
+
+`GeometryImportController` converts one accepted, tokenized GUI request to `OperatorInput`, deduplicates repeated acceptance, and queues copied `TaskEvent` values back to its QObject thread. It reports diagnostics through `ConsoleWidget` and relies on ModelData events plus a safe refresh after success; it neither reads files nor calls `GeometryManager`. QPointer guards and RAII unsubscription make controller/widget destruction safe during work.
+
+The validated complete Debug suite is 33/33. T013 and T014 remain complete; T016 and T017 remain open.
+
 ## UI responsiveness heartbeat
 
 Use the same deterministic heartbeat assertion for geometry import, Gmsh generation, project open/save and large-file IO:

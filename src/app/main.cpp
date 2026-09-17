@@ -17,6 +17,8 @@
 #include "model/ModelData/ApplicationRuntime.h"
 #include "model/ModelData/GeometryManager.h"
 #include "model/ModelData/MeshManager.h"
+#include "operators/OperatorsGUI/GeometryImportController.h"
+#include "operators/OperatorsModel/FITKTaskExecutor.h"
 
 #include "FITK_Kernel/FITKAppFramework/FITKAppFramework.h"
 #include "FITK_Kernel/FITKAppFramework/FITKAppFrameworkAPI.h"
@@ -170,9 +172,10 @@ int main(int argc, char* argv[])
     AppMesh::App::PyRegister python(false);
     std::unique_ptr<AppMesh::Model::GeometryManager> geometryManager;
     std::unique_ptr<AppMesh::Model::MeshManager> meshManager;
+    std::unique_ptr<AppMesh::OperatorsModel::TaskService> taskService;
     const QString runtimeKey = globalMapping->registrationKey;
     AppMesh::App::MainWindowGenerator mainWindow(
-        [&globalData, &geometryManager, &meshManager, runtimeKey] {
+        [&globalData, &geometryManager, &meshManager, &taskService, runtimeKey] {
             auto* runtime = dynamic_cast<AppMesh::Model::ApplicationRuntime*>(
                 globalData.instance(runtimeKey));
             if (!runtime)
@@ -183,6 +186,7 @@ int main(int argc, char* argv[])
 
             // A recreated window must release the previous typed managers in
             // reverse dependency order after its widgets have already gone.
+            taskService.reset();
             meshManager.reset();
             geometryManager.reset();
 
@@ -211,8 +215,22 @@ int main(int argc, char* argv[])
             }
             console.release();
 
+            auto executor = std::make_shared<AppMesh::OperatorsModel::FITKTaskExecutor>();
+            auto tasks = std::make_unique<AppMesh::OperatorsModel::TaskService>(executor);
+            auto readers = std::make_shared<AppMesh::OperatorsModel::GeometryReaderRegistry>();
+            auto importOperator =
+                std::make_shared<AppMesh::OperatorsModel::ImportGeometryOperator>(*geometry,
+                                                                                  readers);
+            new AppMesh::OperatorsGUI::GeometryImportController(*tasks,
+                                                                 importOperator,
+                                                                 consoleGuard,
+                                                                 static_cast<AppMesh::Gui::ModelTree*>(
+                                                                     window->modelTreeWidget()),
+                                                                 window.get());
+
             geometryManager = std::move(geometry);
             meshManager = std::move(mesh);
+            taskService = std::move(tasks);
             return std::unique_ptr<QWidget>(window.release());
         },
         !smokeTest);

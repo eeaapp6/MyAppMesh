@@ -58,6 +58,14 @@
 
 **Rationale**: This preserves FITK ownership of repository/thread mechanics while giving APPMesh a GUI-independent business contract that can be tested without QObject ownership or worker scheduling. It also prevents FITK pointers and mutable argument maps from becoming the public task query surface.
 
+## Decision: T015 adapts FITKThreadPool through a narrow executor
+
+**Verified FITK API**: `FITKThreadPool::execTask(FITKThreadTask*)` accepts a heap task and the task enables `QRunnable` auto-delete; the call returns `void` and exposes no rejection result. `FITKThreadPool::wait()` waits for the entire process-wide pool without a timeout. `FITKOperatorRepo` registers and owns `FITKAbstractOperator` instances, but `FITKAbstractOperator` exposes mutable arguments and signals rather than an execution function matching APPMesh `IOperator`.
+
+**Decision**: T015 introduces `ITaskExecutor` and a production `FITKTaskExecutor` whose private `FITKThreadTask` runs one value-captured callable. The adapter tracks only its own pending callables in shared state and offers bounded waiting, so `TaskService` neither duplicates a thread pool nor blocks on unrelated FITK work. `TaskService` continues to own APPMesh `Task` snapshots and observer dispatch; concrete `IOperator` values are injected directly instead of pretending that `FITKOperatorRepo` supplies execution semantics it does not have. A rejecting test executor covers the explicit rejection path that the real FITK `void` API cannot report.
+
+**Lifetime boundary**: FITK owns and auto-deletes each submitted task object. The callable captures shared APPMesh execution state, so a bounded `TaskService` shutdown cannot leave a callback targeting a destroyed service or widget. New submissions are disabled before waiting. No detached thread, second production thread pool, cancellation state or additional FITK binary is introduced.
+
 ## Decision: Phase 3 closes at the viewport injection seam
 
 **Conflict found**: T013 was named as a FastCAE/VTK assembly test even though its only prerequisites are T010-T012, while formal `FITKRenderWindowVTK`, GraphData actors, refresh and picking are explicitly implemented and tested by T026-T028 in Phase 7. Treating formal VTK as a T013 completion gate would invert that dependency and duplicate T028.
