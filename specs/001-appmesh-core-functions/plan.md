@@ -222,7 +222,7 @@ The T012 GUI dialog suite uses temporary fixtures to cover path, parameter-key, 
    T011 GUI tests cover ModelData Added/Updated/Removed/Reset notifications, automatic tree refresh, worker-to-GUI queueing, event ordering and unbind/destruction safety.
 2. Contract-test plugin discovery, API compatibility, capability registration, install rollback, unload cleanup and generator result validation.
 3. Contract-test HDF5 context creation, Version type/version checks, plugin read/write dispatch and failure reporting.
-4. Integration-test initialization order, real `FITKApplication` factory registration, the Debug FITK DLL allowlist, reverse rollback, FastCAE factories, VTK/GraphData synchronization, operator routing and UI-thread responsiveness. T041 additionally executes a non-blocking real-FITK smoke test and uses `dumpbin /dependents` to reject Release Qt/HDF5, unlisted FITK libraries and original APPMesh business DLLs. The responsiveness fixture keeps each target worker active for at least 5 seconds, runs a 100 ms `QTimer` on the UI thread, records at least 50 consecutive callbacks, fails when any adjacent callback interval exceeds 500 ms, and verifies one observed `running` state followed by exactly one terminal state.
+4. Integration-test initialization order, real `FITKApplication` factory registration, the Debug FITK DLL allowlist, reverse rollback, FastCAE factories, operator routing and UI-thread responsiveness. T013 closes the Phase 3 GUI shell with a placeholder/replaceable viewport boundary and a controlled responsiveness fixture; it does not claim VTK rendering. T026-T028 separately own formal FITKRenderWindowVTK/GraphData assembly, actor synchronization, incremental refresh and picking tests. T041 additionally executes a non-blocking real-FITK smoke test and uses `dumpbin /dependents` to reject Release Qt/HDF5, unlisted FITK libraries and original APPMesh business DLLs. The shared responsiveness contract keeps each target worker active for at least 5 seconds, runs a 100 ms `QTimer` on the UI thread, records at least 50 consecutive callbacks, fails when any adjacent callback interval exceeds 500 ms, and verifies one observed `running` state followed by exactly one terminal state. T013 proves the shell and event mechanism; T017, T021, T032 and T039 apply the same contract to real geometry import, mesh generation, project/large-file IO and the aggregate performance baseline.
 5. Driver-test the first-release Gmsh path with a fake executable plus the bundled Gmsh 4.5.4 smoke fixture; cover missing executable, non-zero exit, malformed output and large output streams. Reuse the same contract suite when a future TetGen or FastCAE Grid plugin is actually supplied.
 6. Extension-test Python and HTTP success/failure dispatch through operators, permission checks and non-serializable results; do not assert an uncommitted stable schema.
 7. End-to-end test geometry-import -> mesh-generate -> display -> export -> HDF5-save and controlled shutdown/failure preservation.
@@ -267,11 +267,11 @@ FastCAE mapping required by implementation and tests: `FITKGlobalData` -> `Globa
 | FR-008 | plugins/generator operators | T018,T020,T022,T042 | AT-04,AT-06 |
 | FR-009 | operators/task service | T014,T019 | AT-04,AT-11 |
 | FR-010 | result validation | T007,T019 | AT-04 |
-| FR-011 | GUI/GraphData | T010,T011,T026,T027 | AT-05 |
+| FR-011 | GUI shell/GraphData | T010-T013,T026-T028 | AT-05 |
 | FR-012 | FastCAE IO | T031 | AT-07 |
 | FR-013 | HDF5IO/plugins | T029,T030,T042 | AT-08 |
 | FR-014 | HDF5IO/task service | T029,T031,T032 | AT-08,AT-11 |
-| FR-015 | task service/signals | T014,T019,T039 | AT-11 |
+| FR-015 | GUI heartbeat/task service/signals | T013,T014,T017,T019,T021,T032,T039 | AT-05,AT-11 |
 | FR-016 | plugin manager | T022,T023,T024,T025,T042 | AT-06 |
 | FR-017 | PythonInterface | T033,T036 | AT-09 |
 | FR-018 | HTTP adapter | T034,T036 | AT-09 |

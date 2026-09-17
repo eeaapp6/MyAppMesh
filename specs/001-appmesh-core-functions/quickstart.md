@@ -180,7 +180,9 @@ ctest --test-dir build\vs2017-x64-debug -C Debug -R "^t013\." --output-on-failur
 
 `t013.gui-smoke` assembles `QApplication`, the SARibbon main window, the command area, `ModelTree`, `ConsoleWidget`, a placeholder viewport, `ApplicationRuntime`, `GeometryManager` and `MeshManager`. It checks Runtime synchronization, diagnostic routing, unique QWidget ownership, widget-before-service destruction, creation-failure isolation and clean application teardown. `t013.ui-heartbeat` runs deterministic success and failure workers for at least five seconds each, samples a 100 ms UI timer with a monotonic clock, joins every worker, and reports sample count, minimum/maximum adjacent interval, state sequence, terminal count and worker exit state.
 
-The two tests deliberately use the placeholder viewport. The current audited FITK Debug allowlist contains only `FITKCore` and `FITKAppFramework`; adding `FITKRenderWindowVTK` merely to make this test pass would violate the dependency boundary. Therefore these checks do not claim FastCAE/VTK rendering coverage, and T013 remains open until the formal VTK assembly is available through the planned T026 boundary.
+The two tests deliberately use the placeholder viewport. The current audited FITK Debug allowlist contains only `FITKCore` and `FITKAppFramework`; adding `FITKRenderWindowVTK` merely to make this test pass would violate the dependency boundary. Therefore T013 closes only the Phase 3 GUI shell and viewport-injection seam and does not claim FastCAE/VTK rendering coverage. Formal FITKRenderWindowVTK/GraphData actors and refresh remain T026, picking remains T027, and formal VTK synchronization/interaction testing remains T028.
+
+Verified T013 evidence: both success and failure fixtures recorded 56 samples while running for approximately 5.6 seconds; their maximum adjacent intervals were 116 ms and 128 ms respectively, and each produced exactly one requested terminal state after `running`. The focused suite passed 2/2, and `ctest --repeat until-fail:5 -R "t013"` passed all five repetitions. This controlled fixture proves the GUI shell and generic asynchronous event path remain responsive; it does not substitute for the real-operation SC-002 checks in T017, T021, T032 and T039.
 
 ## T014 operator and task contracts
 
@@ -193,7 +195,7 @@ ctest --test-dir build\vs2017-x64-debug -C Debug -R "^t014" --output-on-failure
 
 The expected focused result is 1/1 and the complete Debug suite is 30/30. `t014.operators-interface` verifies monotonic nonzero `TaskId` allocation and exhaustion, immutable inputs, detached snapshots, UTC timestamps, 0-100 progress, Diagnostic/ErrorInfo round trips, mutually exclusive OperatorResult values, exception conversion, task-local event sequence and the only legal state transitions: `Created -> Executing -> Succeeded` or `Created -> Executing -> Failed`. Cancellation, pause and retry are unsupported.
 
-`IOperator` performs business validation and execution against const input values; it does not accept QWidget, schedule a thread or update the GUI. T015 owns TaskService, FITK operator-repository/thread-pool adaptation and observer dispatch. T013 remains open for its formal VTK viewport boundary.
+`IOperator` performs business validation and execution against const input values; it does not accept QWidget, schedule a thread or update the GUI. T015 owns TaskService, FITK operator-repository/thread-pool adaptation and observer dispatch. T013 is complete for the Phase 3 GUI shell; formal VTK work remains independently open in T026-T028.
 
 ## UI responsiveness heartbeat
 

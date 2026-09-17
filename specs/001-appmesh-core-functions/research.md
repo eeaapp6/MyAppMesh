@@ -58,6 +58,14 @@
 
 **Rationale**: This preserves FITK ownership of repository/thread mechanics while giving APPMesh a GUI-independent business contract that can be tested without QObject ownership or worker scheduling. It also prevents FITK pointers and mutable argument maps from becoming the public task query surface.
 
+## Decision: Phase 3 closes at the viewport injection seam
+
+**Conflict found**: T013 was named as a FastCAE/VTK assembly test even though its only prerequisites are T010-T012, while formal `FITKRenderWindowVTK`, GraphData actors, refresh and picking are explicitly implemented and tested by T026-T028 in Phase 7. Treating formal VTK as a T013 completion gate would invert that dependency and duplicate T028.
+
+**Decision**: T013 verifies the `QApplication`/FITK application boundary, SARibbon GUI shell, Phase 3 widgets/dialogs, ModelData binding, placeholder/replacement viewport seam, failure isolation and a deterministic controlled-worker heartbeat. T026 owns the formal VTK viewport adapter, GraphDataProvider, actors and incremental refresh; T027 owns picking/preselection and stable entity ID return; T028 owns their formal VTK integration tests. T013 therefore may complete without expanding the FITK allowlist and without claiming any rendered geometry or mesh.
+
+**SC-002 boundary**: T013 demonstrates that the shell and generic asynchronous event path can satisfy the fixed 5-second, 100 ms, 50-sample, 500 ms and single-terminal measurement contract. It is not evidence that real geometry import, mesh generation or project/large-file IO satisfies SC-002. Those operation-specific checks remain in T017, T021, T032 and the aggregate T039 baseline.
+
 ## Decision: HDF5 namespaces with best-effort plugin restoration
 
 **Rationale**: HDF5 is required by the design report. Base paths remain stable while plugins own namespaced payloads. The clarified current scope only promises best-effort restoration when project type/version and required plugins match.

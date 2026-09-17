@@ -25,21 +25,21 @@
 - [X] T010 [P] [S3] 实现 `src/gui/GUIFrame/MainWindow.{h,cpp}`、Ribbon、Dock 和主窗口装配 | 前置任务: T004, T006, T008 | 影响模块: GUIFrame、FastCAE GUI | 需求编号: FR-011, FR-001 | 设计章节: 系统设计报告第 5.3、14.1 节 | 输入: ComponentFactory、GraphData 视图端口 | 输出: 主窗口和菜单入口 | 验收条件: 主窗口、Ribbon、模型树、控制台和三维区域可创建
 - [X] T011 [P] [S3] 实现 `src/gui/GUIWidget/ModelTree.{h,cpp}`、节点模型和 `ConsoleWidget` | 前置任务: T006, T008 | 影响模块: GUIWidget、控制台 | 需求编号: FR-005, FR-011 | 设计章节: 系统设计报告第 5.4、7 节 | 输入: ModelData 查询、任务/日志事件 | 输出: 几何/网格树和控制台 | 验收条件: 对象增删、命名、可见性、选择与数据同步，控制台展示诊断
 - [X] T012 实现 `src/gui/GUIDialog/WorkDirectoryDialog`、`GeneratorDialog`、`ProjectDialog` 输入收集与校验 | 前置任务: T002, T010 | 影响模块: GUIDialog | 需求编号: FR-004, FR-008, FR-013 | 设计章节: plan.md GUIWidget/GUIDialog | 输入: 设置、具体生成器参数、文件路径 | 输出: 结构化参数 | 验收条件: 只收集/校验输入，不执行长任务；非法输入被拒绝
-- [ ] T013 [P] [S3] 编写 GUI 冒烟、FastCAE/VTK 装配和 UI 心跳测试 `tests/integration/gui/` | 前置任务: T010-T012 | 影响模块: GUIFrame、GUIWidget、GraphData | 需求编号: FR-011, FR-015, SC-001, SC-002 | 设计章节: plan.md Testing Strategy、quickstart.md UI responsiveness heartbeat | 输入: 最小运行时、持续至少 5 秒的受控后台任务 | 输出: GUI 集成测试与心跳采样报告 | 验收条件: UI 启动成功；UI 线程 100 ms `QTimer` 在后台任务运行期间连续记录至少 50 次回调，最大相邻回调间隔不超过 500 ms；至少观察到一次 `running` 且仅收到一个完成或失败终态
+- [X] T013 [P] [S3] 编写 GUI 冒烟、FastCAE GUI shell/viewport 注入边界和 UI 心跳测试 `tests/integration/gui/` | 前置任务: T010-T012 | 影响模块: GUIFrame、GUIWidget、GUIDialog | 需求编号: FR-011, FR-015, SC-001, SC-002（通用心跳夹具） | 设计章节: plan.md Testing Strategy、quickstart.md UI responsiveness heartbeat | 输入: 最小运行时、持续至少 5 秒的受控后台任务 | 输出: GUI shell 集成测试与心跳采样报告 | 验收条件: 应用和 GUI shell 启动成功；SARibbon MainWindow、ModelTree、ConsoleWidget、对话框和可替换 viewport 宿主通过各自 Phase 3 自动化验证；受控后台任务运行至少 5 秒；UI 线程 100 ms `QTimer` 连续记录至少 50 次回调，最大相邻回调间隔不超过 500 ms；至少观察到一次 `executing/running` 且仅出现一个成功或失败终态；正式 FITKRenderWindowVTK、GraphData actor/刷新/交互归 T026-T028，真实导入、生成和工程 IO 的 SC-002 验收归对应后续集成任务
 
 ## Phase 4: 操作器和几何导入
 
 - [X] T014 [P] [S4] 定义 `src/operators/OperatorsInterface/IOperator`、`Task`、`ErrorInfo`、事件和结果通知接口 | 前置任务: T005, T004 | 影响模块: OperatorsInterface、TaskService | 需求编号: FR-009, FR-015, FR-020, FR-021 | 设计章节: plan.md Core Interfaces; data-model.md Task/ErrorInfo | 输入: FastCAE 操作器/线程池接口 | 输出: 操作器和任务契约 | 验收条件: GUI/业务执行分离；状态 executing/success/failure；错误字段完整
 - [ ] T015 实现 `ImportGeometryOperator`、`OperatorsModel::TaskService` 和 `OperatorsGUI` 路由 | 前置任务: T010, T012, T014 | 影响模块: OperatorsModel、OperatorsGUI | 需求编号: FR-006, FR-009, FR-015 | 设计章节: 系统设计报告第 6.1、14.4 节 | 输入: 文件路径、工作目录、几何 IO 适配器 | 输出: 异步导入任务 | 验收条件: 成功后原子提交 GeometryObject；失败不改变工程并显示诊断
 - [ ] T016 [P] [S4] 接入首版必选几何格式适配器 `src/io/GeometryIO/` 并声明格式能力 | 前置任务: T015 | 影响模块: GeometryIO、FITK 适配 | 需求编号: FR-006, FR-012 | 设计章节: plan.md Module Boundaries; spec.md Clarifications | 输入: 已冻结的 BRep/STEP/STP/IGES/IGS 清单 | 输出: 格式注册、读取和校验适配器 | 验收条件: 清单内有效文件可导入；损坏/空文件/不支持版本有错误；清单变更同步测试夹具
-- [ ] T017 [P] [S4] 编写几何导入单元、失败和端到端测试 `tests/integration/geometry/` | 前置任务: T015, T016 | 影响模块: OperatorsModel、GeometryIO、ModelData | 需求编号: FR-006, FR-020, SC-008 | 设计章节: quickstart.md End-to-end checks | 输入: 有效/无效/超内存文件 | 输出: 自动化验收结果 | 验收条件: 成功刷新树/视图；失败无残留；受控退出保留最后有效数据
+- [ ] T017 [P] [S4] 编写几何导入单元、失败和端到端测试 `tests/integration/geometry/` | 前置任务: T015, T016 | 影响模块: OperatorsModel、GeometryIO、ModelData | 需求编号: FR-006, FR-020, SC-002, SC-008 | 设计章节: quickstart.md End-to-end checks、UI responsiveness heartbeat | 输入: 有效/无效/超内存文件 | 输出: 自动化验收结果 | 验收条件: 成功刷新树/视图；失败无残留；受控退出保留最后有效数据；真实几何导入后台运行至少 5 秒时满足 SC-002 的 100 ms、至少 50 样本、最大 500 ms、running 和单一终态合同
 
 ## Phase 5: 网格管理和网格生成
 
 - [ ] T018 实现各具体生成器操作器的参数收集和校验 | 前置任务: T008, T012, T014 | 影响模块: ModelData、OperatorsModel、GUIDialog | 需求编号: FR-008, FR-009 | 设计章节: contracts/plugin-protocol.md | 输入: 具体驱动要求的参数 | 输出: 驱动可接受的参数 | 验收条件: 按具体生成器规则拒绝非法参数；不引入统一首版 Schema
 - [ ] T019 实现 `MeshGeneratorOperator`、隔离工作目录、流式日志和结果校验 | 前置任务: T014, T018 | 影响模块: OperatorsModel、FITK_Plugins adapter、TaskService | 需求编号: FR-009, FR-010 | 设计章节: plan.md Thread and Task Model | 输入: geometryId、参数、驱动配置 | 输出: 临时网格结果或 ErrorInfo | 验收条件: UI 不阻塞；状态/进度可观察；外部失败或畸形输出不替换旧网格；当前版不提供用户取消
 - [ ] T020 [P] [S5] 接入首版 Gmsh 4.5.4 与 `FITKGmshExeDriver` 2.0.0 适配器 `src/plugins/FITK_Plugins/generators/`，保留其他生成器扩展点 | 前置任务: T019 | 影响模块: FITK_Plugins、外部程序适配 | 需求编号: FR-008, FR-016, SC-003 | 设计章节: plan.md Technical Context、Plugin Protocol | 输入: FastCAE 网格生成接口、Tools 中的 Gmsh、具体参数 | 输出: Gmsh 驱动结果和可复用生成器契约 | 验收条件: Gmsh 可按插件机制加载并完成一次真实生成；缺程序、非零退出和畸形 MSH 可诊断；未提供源码和运行时的 TetGen/FastCAE Grid 不声明为已支持
-- [ ] T021 [S5] 编写生成器契约、参数、失败隔离和结果校验测试 `tests/contract/generators/` | 前置任务: T018-T020 | 影响模块: FITK_Plugins、ModelData、TaskService | 需求编号: FR-008, FR-009, FR-010, SC-003, SC-004 | 设计章节: plan.md Testing Strategy | 输入: T020 已完成的 Gmsh 适配器、fake executable、非法参数、畸形输出 | 输出: 契约测试报告 | 验收条件: T020 完成后执行；注册/参数/结果/失败测试通过，旧网格保持不变
+- [ ] T021 [S5] 编写生成器契约、参数、失败隔离和结果校验测试 `tests/contract/generators/` | 前置任务: T018-T020 | 影响模块: FITK_Plugins、ModelData、TaskService | 需求编号: FR-008, FR-009, FR-010, SC-002, SC-003, SC-004 | 设计章节: plan.md Testing Strategy、quickstart.md UI responsiveness heartbeat | 输入: T020 已完成的 Gmsh 适配器、fake executable、非法参数、畸形输出 | 输出: 契约测试报告 | 验收条件: T020 完成后执行；注册/参数/结果/失败测试通过，旧网格保持不变；真实网格生成后台运行至少 5 秒时满足 SC-002 心跳和单一终态合同
 
 ## Phase 6: 插件系统
 
@@ -52,14 +52,14 @@
 
 - [ ] T026 实现 `src/graph/GraphData/GraphDataProvider`、几何/网格 actor 和增量刷新 | 前置任务: T006, T008, T010 | 影响模块: GraphData、VTK/FastCAE view | 需求编号: FR-011 | 设计章节: 系统设计报告第 5.6、6、10 节 | 输入: ModelData 事件和对象 ID | 输出: actor 映射和刷新事件 | 验收条件: 状态变化只刷新受影响对象，树与视图一致
 - [ ] T027 实现点选、框选、预选适配器和稳定实体 ID 回传 | 前置任务: T026, T011 | 影响模块: GraphData、GUIFrame | 需求编号: FR-011 | 设计章节: plan.md Core Interfaces; 系统设计报告第 5.7 节 | 输入: VTK picking 事件 | 输出: 选择结果 | 验收条件: 点选/框选/预选高亮正确，结果可传给操作器
-- [ ] T028 [P] [S7] 编写 GraphData/VTK 同步和交互测试 `tests/integration/graph/` | 前置任务: T026-T027 | 影响模块: GraphData、GUIFrame、ModelData | 需求编号: FR-011, SC-002 | 设计章节: plan.md Testing Strategy | 输入: 多对象夹具和拾取坐标 | 输出: 图形集成测试 | 验收条件: 状态同步、拾取 ID、刷新次数和 UI 线程约束可验证
+- [ ] T028 [P] [S7] 编写正式 GraphData/VTK 同步和交互测试 `tests/integration/graph/` | 前置任务: T026-T027 | 影响模块: GraphData、GUIFrame、ModelData | 需求编号: FR-011, SC-002 | 设计章节: plan.md Testing Strategy | 输入: 正式 FITKRenderWindowVTK 环境、多对象夹具和拾取坐标 | 输出: 图形集成测试 | 验收条件: actor 状态同步、增量刷新次数、拾取 ID 和正式 VTK 环境下的 UI 线程约束可验证；不由 T013 placeholder 测试替代
 
 ## Phase 8: 文件 IO 和 HDF5 工程
 
 - [ ] T029 实现 `HDF5IO` 工程上下文、Version 信息及插件读写分发 | 前置任务: T006, T008, T023 | 影响模块: HDF5IO、FITK_Plugins | 需求编号: FR-013, FR-014 | 设计章节: contracts/project-hdf5.md | 输入: 工程路径、版本信息、已加载插件 | 输出: HDF5 上下文和插件读写结果 | 验收条件: 正确写入/检查 `version` 和 `project_type`；按当前插件列表调用读写接口
 - [ ] T030 实现工程打开的分阶段校验、匹配条件下插件尽力恢复和兼容性诊断 | 前置任务: T029, T023 | 影响模块: HDF5IO、ModelData、FITK_Plugins | 需求编号: FR-013, FR-020 | 设计章节: plan.md Project File Structure; data-model.md Project | 输入: HDF5、当前上下文、已加载插件 | 输出: 新工程上下文或诊断列表 | 验收条件: 类型/版本/插件匹配时尽力恢复；未知数据诊断但不清空当前工程
 - [ ] T031 [P] [S8] 实现 FITKMesh 导入及 FITKMesh/CGNS/INP 导出适配器和节点/单元/集合校验 | 前置任务: T008, T029 | 影响模块: FastCAE IO、HDF5IO、OperatorsModel | 需求编号: FR-012 | 设计章节: plan.md Storage and File Exchange、Module Boundaries; spec.md FR-012 | 输入: 冻结格式清单、FITKCGNSIO 可复用能力以及 FITKMesh/INP 的 APPMesh 适配需求 | 输出: 统一 MeshData 或导出文件 | 验收条件: 不假设当前源码中不存在的 FITKMesh/INP 组件；三个冻结导出合同和 FITKMesh 导入均有可读写验证；错误不破坏内存；大文件后台执行
-- [ ] T032 编写 HDF5 版本检查、插件读写分发和失败处理测试 `tests/integration/io/` | 前置任务: T029-T031 | 影响模块: HDF5IO、OperatorsModel | 需求编号: FR-013, FR-014, FR-020, SC-005 | 设计章节: plan.md Testing Strategy; quickstart.md | 输入: 有效、损坏、旧版本、缺插件文件 | 输出: IO 集成测试 | 验收条件: `Version` 校验正确；已加载插件读写被调用；失败不清空当前内存数据
+- [ ] T032 编写 HDF5 版本检查、插件读写分发和失败处理测试 `tests/integration/io/` | 前置任务: T029-T031 | 影响模块: HDF5IO、OperatorsModel | 需求编号: FR-013, FR-014, FR-020, SC-002, SC-005 | 设计章节: plan.md Testing Strategy; quickstart.md UI responsiveness heartbeat | 输入: 有效、损坏、旧版本、缺插件文件 | 输出: IO 集成测试 | 验收条件: `Version` 校验正确；已加载插件读写被调用；失败不清空当前内存数据；真实工程打开/保存和大型文件 IO 分别满足 SC-002 心跳和单一终态合同
 - [ ] T042 [S8] 覆盖 FastCAE 插件加载、注册、插件工程读写和卸载流程 | 前置任务: T022-T024、T029-T030 | 影响模块: FITK_Plugins、OperatorsModel、HDF5IO | 需求编号: FR-008, FR-013, FR-016, FR-021 | 设计章节: plan.md Plugin Protocol、Project File Structure | 输入: 实际插件接口、运行任务、插件数据 | 输出: 生命周期和读写诊断 | 验收条件: 不兼容插件不加载；已加载插件可注册能力并参与读写；失败不破坏核心应用；首版不增加统一取消接口
 
 ## Phase 9: Python、HTTP 和 AI 扩展
@@ -107,13 +107,13 @@ Debug 是唯一支持的构建、测试和部署配置。T001 因新增的永久
 | AT-02 工厂/组件/插件失败隔离 | T003,T022-T025,T041,T042 | FR-001,FR-002,FR-003,FR-016 |
 | AT-03 几何导入格式 | T005-T006,T015-T017 | FR-005,FR-006 |
 | AT-04 网格生成参数与结果校验 | T007-T009,T018-T021 | FR-007,FR-008,FR-009,FR-010 |
-| AT-05 GUI/GraphData 点选框选 | T010-T013,T026-T028 | FR-011,SC-002 |
+| AT-05 GUI shell 与 GraphData/VTK 分阶段验收 | T010-T013（shell/注入边界）,T026-T028（正式渲染/交互） | FR-011,FR-015,SC-001,SC-002 |
 | AT-06 插件安装卸载 | T022-T025,T042 | FR-008,FR-016 |
 | AT-07 网格 IO 格式 | T031-T032 | FR-012 |
 | AT-08 HDF5 版本检查/插件读写与尽力恢复 | T029-T032,T042 | FR-013,FR-014,FR-020,SC-005 |
 | AT-09 Python/HTTP 受控调用 | T033-T034,T036 | FR-017,FR-018 |
 | AT-10 AI 边界与失败隔离 | T035-T036 | FR-019,SC-007 |
-| AT-11 线程、异常和数据安全 | T009,T014,T019,T021,T032,T036,T039 | FR-015,FR-020,FR-021,SC-002,SC-004 |
+| AT-11 线程、异常和数据安全 | T009,T013,T014,T017,T019,T021,T032,T036,T039 | FR-015,FR-020,FR-021,SC-002,SC-004 |
 | AT-12 部署和端到端验收 | T037-T040,T043 | FR-022,SC-001,SC-003,SC-006,SC-008 |
 
 
