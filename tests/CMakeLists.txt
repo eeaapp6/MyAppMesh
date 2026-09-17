@@ -89,11 +89,20 @@ appmesh_add_unit_test(t011.model-widgets
     unit/gui/ModelWidgetsTests.cpp)
 appmesh_add_unit_test(t012.dialogs
     unit/gui/DialogTests.cpp)
+appmesh_add_unit_test(t013.gui-smoke
+    integration/gui/GuiSmokeTests.cpp)
+appmesh_add_unit_test(t013.ui-heartbeat
+    integration/gui/UiHeartbeatTests.cpp)
 set_tests_properties(
     t010.main-window
     t011.model-widgets
     t012.dialogs
+    t013.gui-smoke
+    t013.ui-heartbeat
     PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+set_tests_properties(t013.gui-smoke PROPERTIES TIMEOUT 30)
+set_tests_properties(t013.ui-heartbeat PROPERTIES TIMEOUT 60)
 
 add_test(NAME t010.saribbon-debug-dependencies
     COMMAND "${CMAKE_COMMAND}"

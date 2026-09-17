@@ -163,11 +163,24 @@ ctest --test-dir build\vs2017-x64-debug -C Debug -R "t010|t011" --output-on-fail
 
 The expected result is 3/3 focused tests including `t010.saribbon-debug-dependencies`. T010 verifies the real `SARibbonMainWindow`, non-empty ribbon, File/Project, View and Mesh categories/panels, action enablement, central viewport/model-tree/console hosts, QWidget injection and replacement ownership, dock visibility, the no-VTK placeholder, and failure isolation. T011 verifies ModelData event-driven synchronization for generic/geometry/mesh additions, rename, visibility, selection, reparent and deletion, failure isolation, worker-to-GUI queueing, event order, unbind/destruction safety, invalid-refresh preservation, console levels, line limits, and queued worker-thread messages.
 
-The desktop shell uses the audited Debug SARibbon adapter and a replaceable QWidget viewport placeholder. It does not claim VTK/GraphData rendering or picking; the central host is the T026 injection boundary. T013 retains the complete GUI/VTK five-second heartbeat test, and T026 retains the formal VTK viewport and GraphData integration.
+The desktop shell uses the audited Debug SARibbon adapter and a replaceable QWidget viewport placeholder. It does not claim VTK/GraphData rendering or picking; the central host is the T026 injection boundary. T013 verifies this boundary and UI responsiveness without loading an unapproved FITK library. T026 retains the formal VTK viewport and GraphData integration.
 
 ## T012 input dialogs
 
-Run `ctest --test-dir build\\vs2017-x64-debug -C Debug -R t012.dialogs --output-on-failure` to verify work-directory, generic generator and project Open/Save input dialogs. The suite proves invalid input is rejected with diagnostics and accepted values are returned without filesystem IO or business-task execution. T013/T014 remain outside this increment.
+Run `ctest --test-dir build\\vs2017-x64-debug -C Debug -R t012.dialogs --output-on-failure` to verify work-directory, generic generator and project Open/Save input dialogs. The suite proves invalid input is rejected with diagnostics and accepted values are returned without filesystem IO or business-task execution. T014 remains outside this increment.
+
+## T013 GUI smoke and UI heartbeat
+
+Build and run the focused offscreen integration checks in Debug:
+
+```powershell
+cmake --build build\vs2017-x64-debug --config Debug
+ctest --test-dir build\vs2017-x64-debug -C Debug -R "^t013\." --output-on-failure
+```
+
+`t013.gui-smoke` assembles `QApplication`, the SARibbon main window, the command area, `ModelTree`, `ConsoleWidget`, a placeholder viewport, `ApplicationRuntime`, `GeometryManager` and `MeshManager`. It checks Runtime synchronization, diagnostic routing, unique QWidget ownership, widget-before-service destruction, creation-failure isolation and clean application teardown. `t013.ui-heartbeat` runs deterministic success and failure workers for at least five seconds each, samples a 100 ms UI timer with a monotonic clock, joins every worker, and reports sample count, minimum/maximum adjacent interval, state sequence, terminal count and worker exit state.
+
+The two tests deliberately use the placeholder viewport. The current audited FITK Debug allowlist contains only `FITKCore` and `FITKAppFramework`; adding `FITKRenderWindowVTK` merely to make this test pass would violate the dependency boundary. Therefore these checks do not claim FastCAE/VTK rendering coverage, and T013 remains open until the formal VTK assembly is available through the planned T026 boundary.
 
 ## UI responsiveness heartbeat
 
