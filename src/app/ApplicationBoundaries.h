@@ -8,6 +8,11 @@
 
 class QCoreApplication;
 
+namespace AppMesh::OperatorsModel
+{
+class TaskService;
+}
+
 namespace AppMesh::App
 {
 using StageAction = std::function<AppOperationResult()>;
@@ -95,6 +100,23 @@ public:
     AppOperationResult shutdown() override;
 
 private:
+    bool m_initialized = false;
+};
+
+class TaskServiceOperatorBoundary final : public IOperatorBoundary
+{
+public:
+    using Provider = std::function<OperatorsModel::TaskService*()>;
+
+    explicit TaskServiceOperatorBoundary(Provider provider);
+    AppOperationResult initialize() override;
+    AppOperationResult stopAccepting() override;
+    AppOperationResult finishCurrent() override;
+    AppOperationResult shutdown() override;
+
+private:
+    OperatorsModel::TaskService* service() const noexcept;
+    Provider m_provider;
     bool m_initialized = false;
 };
 

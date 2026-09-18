@@ -208,15 +208,37 @@ ctest --test-dir build\vs2017-x64-debug -C Debug --repeat until-fail:5 `
   -R "^t015\.task-service$" --output-on-failure
 ```
 
-The focused result is 3/3 and the TaskService concurrency/lifecycle test passes five consecutive repetitions. `FITKTaskExecutor` submits an auto-deleted private `FITKThreadTask` to the existing `FITKThreadPool`; it tracks only its own value-captured callables for bounded shutdown and does not create another production thread pool. The FITK repository remains the framework registration/ownership boundary, while APPMesh `IOperator` retains its immutable execution contract because `FITKAbstractOperator` exposes no compatible execution function.
+The focused result includes the TaskService, import, controller and production lifecycle tests. `FITKTaskExecutor` submits an auto-deleted private `FITKThreadTask` to the existing `FITKThreadPool`; it tracks only its own value-captured callables for bounded waiting and final drain and does not create another production thread pool. The FITK repository remains the framework registration/ownership boundary, while APPMesh `IOperator` retains its immutable execution contract because `FITKAbstractOperator` exposes no compatible execution function.
 
-`TaskService` owns `Task` records, detached queries and observer delivery. It never invokes an operator, observer or QWidget while holding the task/observer registry locks. A valid returned TaskId observes `Started`, optional progress/diagnostics, and exactly one `Succeeded` or `Failed` event. Executor rejection transitions the already-created Task to Failed; stop rejects new work and boundedly drains accepted work. Cancellation, pause, retry and persistence remain unsupported.
+`TaskService` owns `Task` records, detached queries and observer delivery. It never invokes an operator, observer or QWidget while holding task, observer or submission locks. A valid returned TaskId observes `Started`, optional progress/diagnostics, and exactly one `Succeeded` or `Failed` event. `stop(timeoutMs)` rejects new work and may return a timeout diagnostic while the task remains Executing; `drain()` and destruction then wait without a fixed timeout for accepted work. Cancellation, pause, retry and persistence remain unsupported.
+
+For slow-task lifecycle acceptance, run `ctest --test-dir build\vs2017-x64-debug -C Debug -R "t015.*task|lifecycle" --repeat until-fail:20 --output-on-failure`. Deterministic gates verify that bounded stop times out without fabricating a terminal state, final drain and destruction remain blocked until release, dependencies outlive worker access, unrelated FITK pool work is not awaited, and MeshApp's production task boundary drains both normal exit and window-rebuild ownership before manager destruction.
 
 `ImportGeometryOperator` uses a shared, injected `GeometryReaderRegistry`. Readers return staged `GeometryObject` values and never commit ModelData, create tasks or expose FITK/OCC pointers. The operator validates absolute file/work paths, parameter types, reader key and extension, then commits only through `GeometryManager`; reader, validation, reservation or publication failure leaves existing geometry, payloads, reservations and names unchanged. T015 tests use only fake `.fake` files. Real BRep/STEP/STP/IGES/IGS readers remain T016, and their end-to-end/SC-002 acceptance remains T017.
 
 `GeometryImportController` converts one accepted, tokenized GUI request to `OperatorInput`, deduplicates repeated acceptance, and queues copied `TaskEvent` values back to its QObject thread. It reports diagnostics through `ConsoleWidget` and relies on ModelData events plus a safe refresh after success; it neither reads files nor calls `GeometryManager`. QPointer guards and RAII unsubscription make controller/widget destruction safe during work.
 
-The validated complete Debug suite is 33/33. T013 and T014 remain complete; T016 and T017 remain open.
+The T016 atomicity revalidation complete Debug suite is 36/36. The focused T015/T016 transaction tests also passed 20 consecutive runs, and the Debug smoke-test completed. T013 and T014 remain complete.
+
+## T016 real FITK/OCC geometry readers
+
+```powershell
+ctest --test-dir build\vs2017-x64-debug -C Debug -R "t016|t015|t041" --output-on-failure
+ctest --test-dir build\vs2017-x64-debug -C Debug -R "t016.*(concurrency|reader|lifecycle)" `
+  --repeat until-fail:20 --output-on-failure
+```
+
+`t016.geometry-io-reader-concurrency-lifecycle` creates deterministic OCC box fixtures and reads BRep, STEP/STP and IGES/IGS through the public `FITKOCCModelImport`. It verifies the frozen capability table and case-insensitive aliases, real topology/model keys, empty/corrupt/extension-content mismatch failures, the explicit `Staged -> Published -> Finalized/RolledBack` lifecycle, FITK-first publication, APPMesh-failure rollback and finalized-model release on deletion or manager destruction, plus serialized concurrent imports. Production startup registers the same readers. T017 separately owns and now verifies the full GUI/tree/placeholder-view refresh path plus the five-second SC-002 heartbeat.
+
+## T017 geometry import integration
+
+```powershell
+ctest --test-dir build\\vs2017-x64-debug -C Debug -R "^t017\\.geometry-import-e2e$" --output-on-failure
+ctest --test-dir build\\vs2017-x64-debug -C Debug -R "^t017\\.geometry-import-e2e$" --repeat until-fail:5 --output-on-failure
+ctest --test-dir build\\vs2017-x64-debug -C Debug -R "^t01[567]\\." --repeat until-fail:20 --output-on-failure
+```
+
+`t017.geometry-import-e2e` routes deterministic BRep, STEP, STP, IGES and IGS fixtures through `GeometryImportController -> TaskService -> ImportGeometryOperator -> GeometryIO`. Every format asserts exactly one `Started` and one `Succeeded` event, stable value-only geometry/model/topology keys, GUI-thread ModelTree refresh and exactly one stable-ID placeholder-view notification. Empty, corrupt, mismatch and APPMesh-publication failures assert a single `Failed` terminal state, structured diagnostics, retained prior data and rollback without residue; unsupported format is rejected synchronously without creating a task. Controlled `stopAccepting()->drain()` proves the accepted real OCC task blocks drain until gate release, rejects new work, preserves the prior object after drain, and releases observers/services/managers and repository models in ownership order without late callbacks. The real OCC post-read gate keeps the GUI timer at 100 ms for at least five seconds with at least 50 samples and no adjacent interval above 500 ms. Formal GraphData/VTK rendering remains T026-T028.
 
 ## UI responsiveness heartbeat
 

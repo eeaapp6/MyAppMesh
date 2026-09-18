@@ -36,6 +36,7 @@ target_link_libraries(appmesh_app
         appmesh_model
         appmesh_operators_gui
         appmesh_operators_fitk
+        appmesh_geometry_io
         Qt5::Core
         Qt5::Widgets
         APPMesh::FITKAppFramework

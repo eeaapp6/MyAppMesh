@@ -17,6 +17,7 @@ struct FITKTaskExecutorState
     std::mutex mutex;
     std::condition_variable finished;
     int pending = 0;
+    bool accepting = true;
 };
 
 namespace
@@ -82,7 +83,7 @@ FITKTaskExecutor::FITKTaskExecutor()
 
 FITKTaskExecutor::~FITKTaskExecutor()
 {
-    waitForDone(5000);
+    drain();
 }
 
 Common::OperationResult FITKTaskExecutor::submit(TaskWork work)
@@ -111,6 +112,15 @@ Common::OperationResult FITKTaskExecutor::submit(TaskWork work)
 
     {
         std::lock_guard<std::mutex> guard(m_state->mutex);
+        if (!m_state->accepting)
+        {
+            task->setAutoDelete(false);
+            delete task;
+            result.add(executorDiagnostic(QStringLiteral("TASK-EXECUTOR-STOPPED"),
+                                          QStringLiteral("The FITK task executor is stopped."),
+                                          QStringLiteral("No work is accepted after final drain begins.")));
+            return result;
+        }
         ++m_state->pending;
     }
     try
@@ -160,5 +170,16 @@ Common::OperationResult FITKTaskExecutor::waitForDone(int timeoutMs)
                                       QStringLiteral("The service remains safe, but work is still pending.")));
     }
     return result;
+}
+
+void FITKTaskExecutor::drain() noexcept
+{
+    if (!m_state)
+    {
+        return;
+    }
+    std::unique_lock<std::mutex> lock(m_state->mutex);
+    m_state->accepting = false;
+    m_state->finished.wait(lock, [this] { return m_state->pending == 0; });
 }
 }

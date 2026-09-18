@@ -1,4 +1,5 @@
 #include "ApplicationBoundaries.h"
+#include "operators/OperatorsModel/TaskService.h"
 
 #include <QCoreApplication>
 
@@ -170,6 +171,58 @@ AppOperationResult DisabledOperatorBoundary::finishCurrent()
 
 AppOperationResult DisabledOperatorBoundary::shutdown()
 {
+    m_initialized = false;
+    return {};
+}
+
+TaskServiceOperatorBoundary::TaskServiceOperatorBoundary(Provider provider)
+    : m_provider(std::move(provider))
+{
+}
+
+OperatorsModel::TaskService* TaskServiceOperatorBoundary::service() const noexcept
+{
+    return m_provider ? m_provider() : nullptr;
+}
+
+AppOperationResult TaskServiceOperatorBoundary::initialize()
+{
+    AppOperationResult result;
+    if (!service())
+    {
+        result.add(boundaryDiagnostic(QStringLiteral("APP-TASK-SERVICE-MISSING"),
+                                      QStringLiteral("The task service is unavailable."),
+                                      QStringLiteral("Create the production task service before registering operators.")));
+        return result;
+    }
+    m_initialized = true;
+    return result;
+}
+
+AppOperationResult TaskServiceOperatorBoundary::stopAccepting()
+{
+    if (auto* tasks = service())
+    {
+        tasks->stopAccepting();
+    }
+    return {};
+}
+
+AppOperationResult TaskServiceOperatorBoundary::finishCurrent()
+{
+    if (auto* tasks = service())
+    {
+        tasks->drain();
+    }
+    return {};
+}
+
+AppOperationResult TaskServiceOperatorBoundary::shutdown()
+{
+    if (auto* tasks = service())
+    {
+        tasks->drain();
+    }
     m_initialized = false;
     return {};
 }

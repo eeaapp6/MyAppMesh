@@ -125,6 +125,7 @@ tests/
 | `OperatorsInterface` | operation/task/error contracts | model and FastCAE task abstractions | concrete UI and engine APIs |
 | `OperatorsModel` | validation, task submission and result notification | `ModelData`, `FITK_Plugins`, `HDF5IO`, thread pool | Qt controls |
 | `OperatorsGUI` | action/dialog routing and notifications | GUI modules; operator interfaces | algorithm implementation |
+| `GeometryIO` | frozen-format capabilities, FITK/OCC parsing and staged engine-model lifetime | public `FITKGeoCompOCC`, `FITKInterfaceGeometry`, OCC interfaces; `OperatorsModel` reader contract | widgets, ModelData mutation, original APPMesh binaries |
 | `GraphData` | data-to-VTK adaptation, selection and refresh | `ModelData`, VTK/FastCAE view components | persistence and generator process control |
 | `FITK_Plugins` | discovery, compatibility, lifecycle and generator/IO adapters | FastCAE plugin manager; public APPMesh contracts | private cross-plugin coupling |
 | `HDF5IO` | HDF5 context/version handling and plugin read/write dispatch | HDF5; FastCAE plugin IO contracts | UI state mutation |
@@ -191,6 +192,7 @@ The T041 Debug FITK binary allowlist is exactly `FITKCore` and `FITKAppFramework
 - External process worker: isolated working directory, streamed stdout/stderr, bounded log capture and exit-code translation.
 - Inputs are immutable snapshots; workers write temporary result objects/files. `ModelData` accepts a result only after integrity and association validation.
 - Progress is phase-aware and may be indeterminate (`-1`) when a driver cannot report it. Current release supports observation, failure and controlled shutdown, not user cancellation.
+- `TaskService::stop(timeoutMs)` first rejects new submissions and then performs a bounded, diagnostic wait. It is an operational query only. Final shutdown and destruction use an idempotent, unbounded `drain()` that waits for every task accepted by that service's executor. Normal exit drains, destroys the window/controller, then releases TaskService, MeshManager and GeometryManager before GlobalDataFactory releases ApplicationRuntime; window recreation uses the same post-window cleanup. The executor counts only its own submissions and never waits for unrelated global FITK pool work; no task/observer/submission lock is held while waiting.
 - Shutdown disables new work, waits for existing tasks, then releases dependent services in reverse initialization order.
 
 ## Plugin Protocol
@@ -227,6 +229,8 @@ The T012 GUI dialog suite uses temporary fixtures to cover path, parameter-key, 
 6. Extension-test Python and HTTP success/failure dispatch through operators, permission checks and non-serializable results; do not assert an uncommitted stable schema.
 7. End-to-end test geometry-import -> mesh-generate -> display -> export -> HDF5-save and controlled shutdown/failure preservation.
 8. Performance/deployment tests measure startup, memory, import/IO/generation responsiveness and fixture sizes; exact large-model acceptance thresholds are a product follow-up.
+
+T016 tests generate deterministic OCC boxes and read real BRep, STEP/STP and IGES/IGS files through `FITKOCCModelImport`. T017 adds the real GUI route across all five formats and asserts one `Started`, one `Succeeded` and no `Failed` event per successful task, plus stable model/topology keys and GUI-thread tree/placeholder-view updates. Its failure matrix asserts one `Started` and one `Failed` terminal event, retained prior data, and rollback without FITK residue. Controlled `stopAccepting()->drain()` validation records the last valid object before shutdown, proves it remains unchanged after drain, then destroys observers, TaskService, MeshManager, GeometryManager and ApplicationRuntime in ownership order and verifies repository cleanup and absence of late callbacks. A real OCC post-read gate supplies the SC-002 heartbeat window. Formal GraphData/VTK rendering remains T026-T028.
 
 ## FastCAE Component Usage
 

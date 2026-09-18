@@ -26,6 +26,26 @@ GeometryManager::GeometryManager(ApplicationRuntime& runtime,
 {
 }
 
+GeometryManager::~GeometryManager()
+{
+    std::function<void(const GeometryObject&)> releaser;
+    {
+        std::lock_guard<std::mutex> locker(m_externalResourceMutex);
+        releaser = m_externalResourceReleaser;
+    }
+    if (!releaser)
+        return;
+    QVector<GeometryObject> resources;
+    {
+        QReadLocker locker(&m_lock);
+        resources.reserve(static_cast<int>(m_payloads.size()));
+        for (const auto& payload : m_payloads)
+            resources.append(payload.second);
+    }
+    for (const auto& resource : resources)
+        try { releaser(resource); } catch (...) {}
+}
+
 Common::Diagnostic GeometryManager::diagnostic(const QString& code,
                                                const QString& message,
                                                const QString& detail,
@@ -406,19 +426,53 @@ Common::OperationResult GeometryManager::removeGeometry(ObjectId id)
         return result;
     }
 
+    std::optional<GeometryObject> removedPayload;
     {
         QWriteLocker locker(&m_lock);
-        if (m_payloads.erase(id) != 1)
+        const auto payload = m_payloads.find(id);
+        if (payload == m_payloads.end())
         {
             result.add(diagnostic(QStringLiteral("GEO-PAYLOAD-NOT-FOUND"),
                                   QStringLiteral("Geometry payload disappeared during removal."),
                                   QStringLiteral("The common record was removed; validate geometry indexes."),
                                   id));
         }
+        else
+        {
+            removedPayload = std::move(payload->second);
+            m_payloads.erase(payload);
+        }
     }
     if (removalConstraint)
     {
         removalConstraint->completeGeometryRemoval(id);
+    }
+    if (removedPayload)
+    {
+        std::function<void(const GeometryObject&)> releaser;
+        {
+            std::lock_guard<std::mutex> locker(m_externalResourceMutex);
+            releaser = m_externalResourceReleaser;
+        }
+        if (releaser)
+        {
+            try
+            {
+                releaser(*removedPayload);
+            }
+            catch (const std::exception& exception)
+            {
+                result.add(diagnostic(QStringLiteral("GEO-EXTERNAL-RELEASE-FAILED"),
+                                      QStringLiteral("The external geometry resource could not be released."),
+                                      QString::fromLocal8Bit(exception.what()), id));
+            }
+            catch (...)
+            {
+                result.add(diagnostic(QStringLiteral("GEO-EXTERNAL-RELEASE-FAILED"),
+                                      QStringLiteral("The external geometry resource could not be released."),
+                                      QStringLiteral("Unknown release exception."), id));
+            }
+        }
     }
     return result;
 }
@@ -428,6 +482,13 @@ void GeometryManager::setRemovalConstraint(
 {
     std::lock_guard<std::mutex> locker(m_removalConstraintMutex);
     m_removalConstraint = constraint;
+}
+
+void GeometryManager::setExternalResourceReleaser(
+    std::function<void(const GeometryObject&)> releaser)
+{
+    std::lock_guard<std::mutex> locker(m_externalResourceMutex);
+    m_externalResourceReleaser = std::move(releaser);
 }
 
 int GeometryManager::objectCount() const

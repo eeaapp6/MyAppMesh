@@ -28,7 +28,7 @@ function(appmesh_configure_fitk_dependencies)
     set(_fitk_source_root "${CMAKE_SOURCE_DIR}/dependencies/FastCAECodeBase")
     set(_fitk_debug_dir "${FITK_OUTPUT_DIR}/bin_d")
 
-    foreach(_library FITKCore FITKAppFramework)
+    foreach(_library FITKCore FITKAppFramework FITKInterfaceModel FITKInterfaceGeometry FITKGeoCompOCC)
         appmesh_require_fitk_file(
             "${_fitk_debug_dir}/${_library}.lib"
             "${_library} Debug import library")
@@ -65,17 +65,46 @@ function(appmesh_configure_fitk_dependencies)
                 "APPMesh::FITKCore;Qt5::Core;Qt5::Gui;Qt5::Widgets;Qt5::Network")
     endif()
 
+    foreach(_library FITKInterfaceModel FITKInterfaceGeometry FITKGeoCompOCC)
+        if(NOT TARGET APPMesh::${_library})
+            add_library(APPMesh::${_library} SHARED IMPORTED GLOBAL)
+            set_target_properties(APPMesh::${_library} PROPERTIES
+                INTERFACE_INCLUDE_DIRECTORIES "${_fitk_source_root};${TOOLS_DIR}/Win64/OCC/include"
+                IMPORTED_CONFIGURATIONS Debug
+                IMPORTED_IMPLIB_DEBUG "${_fitk_debug_dir}/${_library}.lib"
+                IMPORTED_LOCATION_DEBUG "${_fitk_debug_dir}/${_library}.dll")
+        endif()
+    endforeach()
+    set_property(TARGET APPMesh::FITKInterfaceModel PROPERTY
+        INTERFACE_LINK_LIBRARIES "APPMesh::FITKCore;Qt5::Core;Qt5::Gui")
+    set_property(TARGET APPMesh::FITKInterfaceGeometry PROPERTY
+        INTERFACE_LINK_LIBRARIES "APPMesh::FITKInterfaceModel;APPMesh::FITKAppFramework;Qt5::Core;Qt5::Gui")
+    set_property(TARGET APPMesh::FITKGeoCompOCC PROPERTY
+        INTERFACE_LINK_LIBRARIES "APPMesh::FITKInterfaceGeometry;APPMesh::FITKInterfaceModel;APPMesh::FITKAppFramework;Qt5::Core;Qt5::Gui")
+
     message(STATUS
-        "APPMesh FITK Debug whitelist: FITKCore;FITKAppFramework (${_fitk_debug_dir})")
+        "APPMesh FITK Debug whitelist: FITKCore;FITKAppFramework;FITKInterfaceModel;FITKInterfaceGeometry;FITKGeoCompOCC (${_fitk_debug_dir})")
 endfunction()
 
 function(appmesh_stage_fitk_runtime target)
+    foreach(_library FITKCore FITKAppFramework FITKInterfaceModel FITKInterfaceGeometry FITKGeoCompOCC)
+        add_custom_command(TARGET ${target} POST_BUILD
+            COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+                "$<TARGET_FILE:APPMesh::${_library}>" "$<TARGET_FILE_DIR:${target}>")
+    endforeach()
+    set(_occ_runtime TKBO TKBool TKBRep TKernel TKFeat TKFillet TKG2d TKG3d
+        TKGeomAlgo TKGeomBase TKIGES TKLCAF TKMath TKMesh TKOffset TKPrim
+        TKShHealing TKSTEP TKSTL TKTopAlgo TKXCAF TKXDEIGES TKXDESTEP TKXSBase)
+    foreach(_library IN LISTS _occ_runtime)
+        appmesh_require_fitk_file("${TOOLS_DIR}/Win64/OCC/bind/${_library}.dll"
+            "OCC Debug runtime ${_library}")
+        add_custom_command(TARGET ${target} POST_BUILD
+            COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+                "${TOOLS_DIR}/Win64/OCC/bind/${_library}.dll" "$<TARGET_FILE_DIR:${target}>")
+    endforeach()
+    appmesh_require_fitk_file("${TOOLS_DIR}/Win64/dime/bind/dime0d.dll" "dime Debug runtime")
     add_custom_command(TARGET ${target} POST_BUILD
         COMMAND "${CMAKE_COMMAND}" -E copy_if_different
-            "$<TARGET_FILE:APPMesh::FITKCore>"
-            "$<TARGET_FILE_DIR:${target}>"
-        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
-            "$<TARGET_FILE:APPMesh::FITKAppFramework>"
-            "$<TARGET_FILE_DIR:${target}>"
-        COMMENT "Staging explicit FITK Debug whitelist")
+            "${TOOLS_DIR}/Win64/dime/bind/dime0d.dll" "$<TARGET_FILE_DIR:${target}>"
+        COMMENT "Staging explicit FITK/OCC Debug geometry whitelist")
 endfunction()

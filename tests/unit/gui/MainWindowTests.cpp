@@ -107,5 +107,24 @@ int main(int argc, char* argv[])
                      QStringLiteral("production generator destroys the window deterministically"));
     }
 
+    {
+        QPointer<QWidget> ownedWindow;
+        bool cleanupObservedDestroyedWindow = false;
+        AppMesh::App::MainWindowGenerator generator(
+            [&ownedWindow] {
+                auto window = std::make_unique<QWidget>();
+                ownedWindow = window.get();
+                return window;
+            },
+            false,
+            [&] {
+                cleanupObservedDestroyedWindow = ownedWindow.isNull();
+                return AppMesh::App::AppOperationResult{};
+            });
+        suite.expect(generator.create().succeeded() && generator.destroy().succeeded() &&
+                         cleanupObservedDestroyedWindow,
+                     QStringLiteral("window cleanup runs after QObject dependents are destroyed"));
+    }
+
     return suite.result();
 }

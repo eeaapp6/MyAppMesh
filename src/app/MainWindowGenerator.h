@@ -10,11 +10,14 @@ class QWidget;
 namespace AppMesh::App
 {
 using WindowFactory = std::function<std::unique_ptr<QWidget>()>;
+using WindowDestroyedAction = std::function<AppOperationResult()>;
 
 class MainWindowGenerator
 {
 public:
-    explicit MainWindowGenerator(WindowFactory factory = {}, bool showWindow = true);
+    explicit MainWindowGenerator(WindowFactory factory = {},
+                                 bool showWindow = true,
+                                 WindowDestroyedAction destroyedAction = {});
     ~MainWindowGenerator();
 
     AppOperationResult create();
@@ -25,5 +28,6 @@ private:
     WindowFactory m_factory;
     bool m_showWindow = true;
     std::unique_ptr<QWidget> m_window;
+    WindowDestroyedAction m_destroyedAction;
 };
 }

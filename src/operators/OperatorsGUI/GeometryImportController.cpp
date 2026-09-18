@@ -32,12 +32,14 @@ GeometryImportController::GeometryImportController(
     std::shared_ptr<Operators::IOperator> importOperator,
     Gui::ConsoleWidget* console,
     Gui::ModelTree* modelTree,
+    GeometryRefreshHandler geometryRefreshHandler,
     QObject* parent)
     : QObject(parent),
       m_taskService(taskService),
       m_importOperator(std::move(importOperator)),
       m_console(console),
-      m_modelTree(modelTree)
+      m_modelTree(modelTree),
+      m_geometryRefreshHandler(std::move(geometryRefreshHandler))
 {
     const QPointer<GeometryImportController> guard(this);
     m_subscription = m_taskService.subscribe(
@@ -162,6 +164,10 @@ void GeometryImportController::handleEvent(const Operators::TaskEvent& event)
             {
                 report(diagnostic);
             }
+        }
+        if (m_geometryRefreshHandler && event.result && event.result->objectId != Model::InvalidObjectId)
+        {
+            m_geometryRefreshHandler(event.result->objectId);
         }
     }
 }

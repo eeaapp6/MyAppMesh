@@ -14,6 +14,7 @@
 #include "gui/GUIFrame/MainWindow.h"
 #include "gui/GUIWidget/ConsoleWidget.h"
 #include "gui/GUIWidget/ModelTree.h"
+#include "io/GeometryIO/GeometryIO.h"
 #include "model/ModelData/ApplicationRuntime.h"
 #include "model/ModelData/GeometryManager.h"
 #include "model/ModelData/MeshManager.h"
@@ -173,9 +174,20 @@ int main(int argc, char* argv[])
     std::unique_ptr<AppMesh::Model::GeometryManager> geometryManager;
     std::unique_ptr<AppMesh::Model::MeshManager> meshManager;
     std::unique_ptr<AppMesh::OperatorsModel::TaskService> taskService;
+    auto geometryRepository = std::make_shared<AppMesh::GeometryIO::FITKGeometryRepository>();
+    auto geometryReaders = std::make_shared<AppMesh::OperatorsModel::GeometryReaderRegistry>();
+    const auto readerRegistration =
+        AppMesh::GeometryIO::registerFirstReleaseGeometryReaders(*geometryReaders,
+                                                                  geometryRepository);
+    if (!readerRegistration.succeeded())
+    {
+        printDiagnostics(readerRegistration);
+        return 1;
+    }
     const QString runtimeKey = globalMapping->registrationKey;
     AppMesh::App::MainWindowGenerator mainWindow(
-        [&globalData, &geometryManager, &meshManager, &taskService, runtimeKey] {
+        [&globalData, &geometryManager, &meshManager, &taskService,
+         geometryReaders, geometryRepository, runtimeKey] {
             auto* runtime = dynamic_cast<AppMesh::Model::ApplicationRuntime*>(
                 globalData.instance(runtimeKey));
             if (!runtime)
@@ -186,11 +198,25 @@ int main(int argc, char* argv[])
 
             // A recreated window must release the previous typed managers in
             // reverse dependency order after its widgets have already gone.
+            if (taskService)
+            {
+                taskService->drain();
+            }
             taskService.reset();
             meshManager.reset();
             geometryManager.reset();
 
             auto geometry = std::make_unique<AppMesh::Model::GeometryManager>(*runtime);
+            const std::weak_ptr<AppMesh::GeometryIO::FITKGeometryRepository> weakRepository(
+                geometryRepository);
+            geometry->setExternalResourceReleaser(
+                [weakRepository](const AppMesh::Model::GeometryObject& object) {
+                    if (object.adapter.providerKey == QStringLiteral("fitk.occ"))
+                    {
+                        if (const auto repository = weakRepository.lock())
+                            repository->release(object.adapter.modelKey);
+                    }
+                });
             auto mesh = std::make_unique<AppMesh::Model::MeshManager>(*runtime, *geometry);
             auto window = std::make_unique<AppMesh::GUIFrame::MainWindow>();
             auto tree = std::make_unique<AppMesh::Gui::ModelTree>();
@@ -217,15 +243,15 @@ int main(int argc, char* argv[])
 
             auto executor = std::make_shared<AppMesh::OperatorsModel::FITKTaskExecutor>();
             auto tasks = std::make_unique<AppMesh::OperatorsModel::TaskService>(executor);
-            auto readers = std::make_shared<AppMesh::OperatorsModel::GeometryReaderRegistry>();
             auto importOperator =
                 std::make_shared<AppMesh::OperatorsModel::ImportGeometryOperator>(*geometry,
-                                                                                  readers);
+                                                                                  geometryReaders);
             new AppMesh::OperatorsGUI::GeometryImportController(*tasks,
                                                                  importOperator,
                                                                  consoleGuard,
                                                                  static_cast<AppMesh::Gui::ModelTree*>(
                                                                      window->modelTreeWidget()),
+                                                                 {},
                                                                  window.get());
 
             geometryManager = std::move(geometry);
@@ -233,12 +259,23 @@ int main(int argc, char* argv[])
             taskService = std::move(tasks);
             return std::unique_ptr<QWidget>(window.release());
         },
-        !smokeTest);
+        !smokeTest,
+        [&taskService, &meshManager, &geometryManager] {
+            if (taskService)
+            {
+                taskService->drain();
+            }
+            taskService.reset();
+            meshManager.reset();
+            geometryManager.reset();
+            return AppMesh::App::AppOperationResult{};
+        });
     AppMesh::App::SignalProcessor signalProcessor(false);
     AppMesh::App::PreWindowInitializer preWindow(false);
     AppMesh::App::DisabledLifecycleBoundary plugins(QStringLiteral("FastCAE plugins"));
     AppMesh::App::AppInitializer initializer(false);
-    AppMesh::App::DisabledOperatorBoundary operators;
+    AppMesh::App::TaskServiceOperatorBoundary operators(
+        [&taskService] { return taskService.get(); });
     AppMesh::App::BasicCommandLineBoundary commandLine;
     AppMesh::App::QtEventLoop eventLoop(application, smokeTest);
     StreamStartupObserver observer;

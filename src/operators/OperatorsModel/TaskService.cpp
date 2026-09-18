@@ -247,7 +247,7 @@ TaskService::~TaskService()
 {
     if (m_state)
     {
-        stop(5000);
+        drain();
         closeObservers(m_state);
     }
 }
@@ -449,11 +449,7 @@ TaskEventSubscription TaskService::subscribe(Operators::TaskEventObserver observ
 
 Common::OperationResult TaskService::stop(int timeoutMs)
 {
-    {
-        std::lock_guard<std::mutex> submissionGuard(m_state->submissionMutex);
-        std::lock_guard<std::mutex> guard(m_state->taskMutex);
-        m_state->accepting = false;
-    }
+    stopAccepting();
     if (!m_state->executor)
     {
         Common::OperationResult result;
@@ -463,6 +459,31 @@ Common::OperationResult TaskService::stop(int timeoutMs)
         return result;
     }
     return m_state->executor->waitForDone(timeoutMs);
+}
+
+void TaskService::stopAccepting() noexcept
+{
+    if (!m_state)
+    {
+        return;
+    }
+    std::lock_guard<std::mutex> submissionGuard(m_state->submissionMutex);
+    std::lock_guard<std::mutex> guard(m_state->taskMutex);
+    m_state->accepting = false;
+}
+
+void TaskService::drain() noexcept
+{
+    if (!m_state)
+    {
+        return;
+    }
+    stopAccepting();
+    const auto executor = m_state->executor;
+    if (executor)
+    {
+        executor->drain();
+    }
 }
 
 bool TaskService::isAccepting() const noexcept

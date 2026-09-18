@@ -71,6 +71,7 @@ public:
 
     explicit GeometryManager(ApplicationRuntime& runtime,
                              BeforePublishCheckpoint beforePublish = {});
+    ~GeometryManager();
 
     GeometryManager(const GeometryManager&) = delete;
     GeometryManager& operator=(const GeometryManager&) = delete;
@@ -99,6 +100,8 @@ public:
     // or its association state. An expired constraint cannot dangle.
     void setRemovalConstraint(
         const std::shared_ptr<GeometryRemovalConstraint>& constraint);
+    void setExternalResourceReleaser(
+        std::function<void(const GeometryObject&)> releaser);
 
     int objectCount() const;
     Common::OperationResult validateIndexes() const;
@@ -117,6 +120,8 @@ private:
     BeforePublishCheckpoint m_beforePublish;
     mutable std::mutex m_removalConstraintMutex;
     std::weak_ptr<GeometryRemovalConstraint> m_removalConstraint;
+    std::mutex m_externalResourceMutex;
+    std::function<void(const GeometryObject&)> m_externalResourceReleaser;
     mutable QReadWriteLock m_lock;
     std::map<ObjectId, GeometryObject> m_payloads;
 };

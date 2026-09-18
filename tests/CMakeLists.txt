@@ -120,10 +120,54 @@ appmesh_add_operator_test(t014.operators-interface
     unit/operators/OperatorsInterfaceTests.cpp)
 appmesh_add_operator_model_test(t015.task-service
     unit/operators/TaskServiceTests.cpp)
+target_link_libraries(t015.task-service PRIVATE APPMesh::FITKCore)
 appmesh_add_operator_model_test(t015.import-geometry
     unit/operators/ImportGeometryOperatorTests.cpp)
 appmesh_add_operator_gui_test(t015.geometry-import-controller
     integration/gui/GeometryImportControllerTests.cpp)
+appmesh_add_unit_test(t015.task-lifecycle
+    integration/app/TaskLifecycleIntegrationTests.cpp)
+add_executable(t016.geometry-io unit/io/GeometryIOTests.cpp)
+target_include_directories(t016.geometry-io PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}"
+    "${TOOLS_DIR}/Win64/OCC/include")
+target_link_libraries(t016.geometry-io PRIVATE
+    appmesh_geometry_io appmesh_operators_model Qt5::Core
+    "${TOOLS_DIR}/Win64/OCC/libd/TKPrim.lib"
+    "${TOOLS_DIR}/Win64/OCC/libd/TKBRep.lib"
+    "${TOOLS_DIR}/Win64/OCC/libd/TKTopAlgo.lib"
+    "${TOOLS_DIR}/Win64/OCC/libd/TKSTEP.lib"
+    "${TOOLS_DIR}/Win64/OCC/libd/TKIGES.lib"
+    "${TOOLS_DIR}/Win64/OCC/libd/TKXSBase.lib"
+    "${TOOLS_DIR}/Win64/OCC/libd/TKernel.lib")
+add_test(NAME t016.geometry-io-reader-concurrency-lifecycle
+    COMMAND "$<TARGET_FILE:t016.geometry-io>")
+set_tests_properties(t016.geometry-io-reader-concurrency-lifecycle PROPERTIES TIMEOUT 60)
+add_executable(t017.geometry-import-e2e integration/geometry/GeometryImportEndToEndTests.cpp)
+target_include_directories(t017.geometry-import-e2e PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}"
+    "${TOOLS_DIR}/Win64/OCC/include")
+target_link_libraries(t017.geometry-import-e2e PRIVATE
+    appmesh_geometry_io appmesh_operators_gui appmesh_operators_fitk Qt5::Core Qt5::Widgets
+    "${TOOLS_DIR}/Win64/OCC/libd/TKPrim.lib"
+    "${TOOLS_DIR}/Win64/OCC/libd/TKBRep.lib"
+    "${TOOLS_DIR}/Win64/OCC/libd/TKTopAlgo.lib"
+    "${TOOLS_DIR}/Win64/OCC/libd/TKSTEP.lib"
+    "${TOOLS_DIR}/Win64/OCC/libd/TKIGES.lib"
+    "${TOOLS_DIR}/Win64/OCC/libd/TKXSBase.lib"
+    "${TOOLS_DIR}/Win64/OCC/libd/TKernel.lib")
+add_test(NAME t017.geometry-import-e2e COMMAND "$<TARGET_FILE:t017.geometry-import-e2e>")
+set_tests_properties(t017.geometry-import-e2e PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 90)
+add_test(NAME t016.debug-dependencies
+    COMMAND "${CMAKE_COMMAND}"
+        "-DDUMPBIN_EXECUTABLE=${APPMESH_DUMPBIN_EXECUTABLE}"
+        "-DAPP_EXECUTABLE=$<TARGET_FILE:appmesh>"
+        "-DGEOMETRY_DLL=$<TARGET_FILE:APPMesh::FITKGeoCompOCC>"
+        "-DRUNTIME_DIR=$<TARGET_FILE_DIR:appmesh>"
+        "-DCONFIG=$<CONFIG>"
+        -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/VerifyGeometryIODependencies.cmake")
+set_tests_properties(t016.debug-dependencies PROPERTIES
+    DEPENDS t016.geometry-io-reader-concurrency-lifecycle)
 set_tests_properties(
     t010.main-window
     t011.model-widgets
@@ -139,6 +183,7 @@ set_tests_properties(
     t015.task-service
     t015.import-geometry
     t015.geometry-import-controller
+    t015.task-lifecycle
     PROPERTIES TIMEOUT 30)
 
 add_test(NAME t010.saribbon-debug-dependencies

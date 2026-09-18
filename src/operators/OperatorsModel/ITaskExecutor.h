@@ -15,5 +15,6 @@ public:
 
     virtual Common::OperationResult submit(TaskWork work) = 0;
     virtual Common::OperationResult waitForDone(int timeoutMs) = 0;
+    virtual void drain() noexcept = 0;
 };
 }

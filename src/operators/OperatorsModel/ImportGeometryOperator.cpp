@@ -41,6 +41,41 @@ bool isStringParameter(const QVariantMap& parameters, const QString& key)
     const auto found = parameters.find(key);
     return found == parameters.end() || found->type() == QVariant::String;
 }
+
+void appendDiagnostics(QVector<Common::Diagnostic>& target,
+                       const Common::OperationResult& source)
+{
+    for (const auto& item : source.diagnostics)
+    {
+        target.append(item);
+    }
+}
+
+Common::OperationResult rollbackTransaction(
+    GeometryReadResult::Transaction& transaction,
+    const QString& path)
+{
+    try
+    {
+        return transaction.rollback();
+    }
+    catch (const std::exception& exception)
+    {
+        Common::OperationResult result;
+        result.add(importDiagnostic(QStringLiteral("GEO-IMPORT-TRANSACTION-ROLLBACK-EXCEPTION"),
+                                    QStringLiteral("Geometry import rollback raised an exception."),
+                                    QString::fromLocal8Bit(exception.what()), path));
+        return result;
+    }
+    catch (...)
+    {
+        Common::OperationResult result;
+        result.add(importDiagnostic(QStringLiteral("GEO-IMPORT-TRANSACTION-ROLLBACK-UNKNOWN-EXCEPTION"),
+                                    QStringLiteral("Geometry import rollback raised an unknown exception."),
+                                    QStringLiteral("No exception detail is available."), path));
+        return result;
+    }
+}
 }
 
 QString ImportGeometryOperator::operationKey()
@@ -306,16 +341,71 @@ Operators::OperatorResult ImportGeometryOperator::execute(
         return failure(diagnostic);
     }
 
+    if (read.transaction)
+    {
+        Common::OperationResult published;
+        try
+        {
+            published = read.transaction->publish();
+        }
+        catch (const std::exception& exception)
+        {
+            published.add(importDiagnostic(QStringLiteral("GEO-IMPORT-TRANSACTION-PUBLISH-EXCEPTION"),
+                                            QStringLiteral("Geometry import publication raised an exception."),
+                                            QString::fromLocal8Bit(exception.what()), request.filePath));
+        }
+        catch (...)
+        {
+            published.add(importDiagnostic(QStringLiteral("GEO-IMPORT-TRANSACTION-PUBLISH-UNKNOWN-EXCEPTION"),
+                                            QStringLiteral("Geometry import publication raised an unknown exception."),
+                                            QStringLiteral("No exception detail is available."), request.filePath));
+        }
+        if (!published.succeeded())
+        {
+            QVector<Common::Diagnostic> diagnostics = published.diagnostics;
+            appendDiagnostics(diagnostics, rollbackTransaction(*read.transaction, request.filePath));
+            if (diagnostics.isEmpty())
+            {
+                diagnostics.append(importDiagnostic(QStringLiteral("GEO-IMPORT-TRANSACTION-PUBLISH-FAILED"),
+                                                     QStringLiteral("The staged geometry could not be published."),
+                                                     QStringLiteral("The transaction returned no diagnostic."),
+                                                     request.filePath));
+            }
+            return failure(diagnostics.front(), diagnostics);
+        }
+    }
+
     Model::CreateGeometryRequest commit;
     commit.name = request.requestedName;
     commit.commonMetadata = request.metadata;
     commit.geometry = *read.geometry;
-    const auto committed = m_geometryManager.createGeometry(commit);
+    Model::CommitGeometryResult committed;
+    try
+    {
+        committed = m_geometryManager.createGeometry(commit);
+    }
+    catch (const std::exception& exception)
+    {
+        committed.add(importDiagnostic(QStringLiteral("GEO-IMPORT-COMMIT-EXCEPTION"),
+                                       QStringLiteral("The geometry manager raised an exception."),
+                                       QString::fromLocal8Bit(exception.what()), request.filePath));
+    }
+    catch (...)
+    {
+        committed.add(importDiagnostic(QStringLiteral("GEO-IMPORT-COMMIT-UNKNOWN-EXCEPTION"),
+                                       QStringLiteral("The geometry manager raised an unknown exception."),
+                                       QStringLiteral("No exception detail is available."), request.filePath));
+    }
     if (!committed.succeeded() || !committed.object)
     {
-        if (!committed.diagnostics.isEmpty())
+        QVector<Common::Diagnostic> diagnostics = committed.diagnostics;
+        if (read.transaction)
         {
-            return failure(committed.diagnostics.front(), committed.diagnostics);
+            appendDiagnostics(diagnostics, rollbackTransaction(*read.transaction, request.filePath));
+        }
+        if (!diagnostics.isEmpty())
+        {
+            return failure(diagnostics.front(), diagnostics);
         }
         const auto diagnostic = importDiagnostic(
             QStringLiteral("GEO-IMPORT-COMMIT-FAILED"),
@@ -324,6 +414,9 @@ Operators::OperatorResult ImportGeometryOperator::execute(
             request.filePath);
         return failure(diagnostic);
     }
+
+    if (read.transaction)
+        read.transaction->finalize();
 
     Operators::ResultReference reference;
     reference.objectId = committed.object->common.id;

@@ -8,6 +8,7 @@
 #include <QSet>
 
 #include <memory>
+#include <functional>
 
 namespace AppMesh::Gui
 {
@@ -35,10 +36,13 @@ struct GeometryImportRouteResult : Common::OperationResult
 class GeometryImportController final : public QObject
 {
 public:
+    using GeometryRefreshHandler = std::function<void(Model::ObjectId)>;
+
     GeometryImportController(OperatorsModel::TaskService& taskService,
                              std::shared_ptr<Operators::IOperator> importOperator,
                              Gui::ConsoleWidget* console,
                              Gui::ModelTree* modelTree,
+                             GeometryRefreshHandler geometryRefreshHandler = {},
                              QObject* parent = nullptr);
     ~GeometryImportController() override;
 
@@ -58,6 +62,7 @@ private:
     std::shared_ptr<Operators::IOperator> m_importOperator;
     QPointer<Gui::ConsoleWidget> m_console;
     QPointer<Gui::ModelTree> m_modelTree;
+    GeometryRefreshHandler m_geometryRefreshHandler;
     OperatorsModel::TaskEventSubscription m_subscription;
     QSet<quint64> m_processedRequestTokens;
     QSet<Operators::TaskId> m_tasks;

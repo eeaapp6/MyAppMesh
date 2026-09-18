@@ -32,9 +32,12 @@ AppDiagnostic windowDiagnostic(const QString& code,
 }
 }
 
-MainWindowGenerator::MainWindowGenerator(WindowFactory factory, bool showWindow)
+MainWindowGenerator::MainWindowGenerator(WindowFactory factory,
+                                         bool showWindow,
+                                         WindowDestroyedAction destroyedAction)
     : m_factory(factory ? std::move(factory) : WindowFactory(createDefaultWindow)),
-      m_showWindow(showWindow)
+      m_showWindow(showWindow),
+      m_destroyedAction(std::move(destroyedAction))
 {
 }
 
@@ -101,7 +104,7 @@ AppOperationResult MainWindowGenerator::create()
 AppOperationResult MainWindowGenerator::destroy()
 {
     m_window.reset();
-    return {};
+    return m_destroyedAction ? m_destroyedAction() : AppOperationResult{};
 }
 
 QWidget* MainWindowGenerator::window() const noexcept

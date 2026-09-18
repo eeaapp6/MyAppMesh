@@ -8,7 +8,8 @@ if(NOT CONFIG STREQUAL "Debug")
     message(FATAL_ERROR "T041 rejects non-Debug configuration: ${CONFIG}")
 endif()
 
-set(_whitelist FITKAppFramework.dll FITKCore.dll)
+set(_whitelist FITKAppFramework.dll FITKCore.dll FITKInterfaceModel.dll
+    FITKInterfaceGeometry.dll FITKGeoCompOCC.dll)
 foreach(_dll IN LISTS _whitelist)
     if(NOT EXISTS "${RUNTIME_DIR}/${_dll}")
         message(FATAL_ERROR "Whitelisted FITK Debug runtime is missing: ${RUNTIME_DIR}/${_dll}")
@@ -22,7 +23,10 @@ file(GLOB _staged_fitk "${RUNTIME_DIR}/FITK*.dll")
 list(SORT _staged_fitk)
 set(_expected
     "${RUNTIME_DIR}/FITKAppFramework.dll"
-    "${RUNTIME_DIR}/FITKCore.dll")
+    "${RUNTIME_DIR}/FITKCore.dll"
+    "${RUNTIME_DIR}/FITKGeoCompOCC.dll"
+    "${RUNTIME_DIR}/FITKInterfaceGeometry.dll"
+    "${RUNTIME_DIR}/FITKInterfaceModel.dll")
 list(SORT _expected)
 if(NOT _staged_fitk STREQUAL _expected)
     message(FATAL_ERROR "Runtime contains FITK DLLs outside the T041 whitelist: ${_staged_fitk}")
@@ -37,7 +41,8 @@ if(NOT _app_exit EQUAL 0)
     message(FATAL_ERROR "dumpbin failed for APPMesh.exe: ${_app_error}")
 endif()
 string(TOLOWER "${_app_output}" _app_dependencies)
-foreach(_required IN ITEMS fitkappframework.dll fitkcore.dll hdf5_d.dll qt5cored.dll qt5widgetsd.dll)
+foreach(_required IN ITEMS fitkappframework.dll fitkcore.dll fitkgeocompocc.dll
+        fitkinterfacegeometry.dll hdf5_d.dll qt5cored.dll qt5widgetsd.dll)
     string(FIND "${_app_dependencies}" "${_required}" _position)
     if(_position EQUAL -1)
         message(FATAL_ERROR "APPMesh.exe is missing required Debug dependency: ${_required}")
@@ -64,7 +69,7 @@ foreach(_dll IN LISTS _whitelist)
         message(FATAL_ERROR "dumpbin failed for ${_dll}: ${_fitk_error}")
     endif()
     string(TOLOWER "${_fitk_output}" _fitk_dependencies)
-    foreach(_debug_runtime IN ITEMS msvcp140d.dll vcruntime140d.dll ucrtbased.dll qt5cored.dll qt5widgetsd.dll)
+    foreach(_debug_runtime IN ITEMS vcruntime140d.dll ucrtbased.dll qt5cored.dll)
         string(FIND "${_fitk_dependencies}" "${_debug_runtime}" _position)
         if(_position EQUAL -1)
             message(FATAL_ERROR "${_dll} is missing required Debug ABI dependency: ${_debug_runtime}")

@@ -61,6 +61,90 @@ public:
     Mode mode;
 };
 
+struct TransactionState
+{
+    bool publishFails = false;
+    bool rollbackFails = false;
+    bool publishThrows = false;
+    int publishCalls = 0;
+    int finalizeCalls = 0;
+    int rollbackCalls = 0;
+};
+
+class FakeTransaction final : public GeometryReadResult::Transaction
+{
+public:
+    explicit FakeTransaction(std::shared_ptr<TransactionState> state) : m_state(std::move(state)) {}
+
+    Common::OperationResult publish() override
+    {
+        ++m_state->publishCalls;
+        if (m_state->publishThrows)
+            throw std::runtime_error("controlled publish exception");
+        Common::OperationResult result;
+        if (m_state->publishFails)
+        {
+            result.add({QStringLiteral("io"), QStringLiteral("TEST-FITK-PUBLISH-FAIL"),
+                        QStringLiteral("Controlled FITK publish failure."), QStringLiteral("Before APPMesh."),
+                        false, {}, QStringLiteral("test.transaction"), {}, {}});
+        }
+        return result;
+    }
+
+    void finalize() noexcept override { ++m_state->finalizeCalls; }
+
+    Common::OperationResult rollback() override
+    {
+        ++m_state->rollbackCalls;
+        Common::OperationResult result;
+        if (m_state->rollbackFails)
+        {
+            result.add({QStringLiteral("io"), QStringLiteral("TEST-FITK-ROLLBACK-FAIL"),
+                        QStringLiteral("Controlled FITK rollback failure."), QStringLiteral("Appended only."),
+                        false, {}, QStringLiteral("test.transaction"), {}, {}});
+        }
+        return result;
+    }
+
+private:
+    std::shared_ptr<TransactionState> m_state;
+};
+
+class TransactionReader final : public IGeometryReader
+{
+public:
+    explicit TransactionReader(std::shared_ptr<TransactionState> state) : m_state(std::move(state)) {}
+    QString key() const override { return QStringLiteral("fake"); }
+    QStringList supportedExtensions() const override { return {QStringLiteral("fake")}; }
+    GeometryReadResult read(const GeometryReadRequest&) const override
+    {
+        GeometryReadResult result;
+        result.geometry = validGeometry();
+        result.transaction = std::make_shared<FakeTransaction>(m_state);
+        return result;
+    }
+
+private:
+    std::shared_ptr<TransactionState> m_state;
+};
+
+class RejectingRemovalConstraint final : public Model::GeometryRemovalConstraint
+{
+public:
+    Common::OperationResult beginGeometryRemoval(Model::ObjectId) override
+    {
+        ++beginCalls;
+        Common::OperationResult result;
+        result.add({QStringLiteral("test"), QStringLiteral("TEST-REMOVAL-REJECTED"),
+                    QStringLiteral("Geometry deletion is deliberately rejected."), QString(), false,
+                    {}, QStringLiteral("test.constraint"), {}, {}});
+        return result;
+    }
+    void cancelGeometryRemoval(Model::ObjectId) noexcept override {}
+    void completeGeometryRemoval(Model::ObjectId) noexcept override {}
+    int beginCalls = 0;
+};
+
 OperatorInput makeInput(const QString& filePath,
                         const QString& workDirectory,
                         const QString& requestedName = QStringLiteral("Imported"))
@@ -80,6 +164,14 @@ std::shared_ptr<GeometryReaderRegistry> registryWith(FakeReader::Mode mode)
 {
     auto registry = std::make_shared<GeometryReaderRegistry>();
     registry->registerReader(std::make_shared<FakeReader>(mode));
+    return registry;
+}
+
+std::shared_ptr<GeometryReaderRegistry> registryWithTransaction(
+    const std::shared_ptr<TransactionState>& state)
+{
+    auto registry = std::make_shared<GeometryReaderRegistry>();
+    registry->registerReader(std::make_shared<TransactionReader>(state));
     return registry;
 }
 }
@@ -182,6 +274,78 @@ int main(int argc, char* argv[])
                      publishFailureRuntime.objectCount() == 0 &&
                      publishFailureManager.validateIndexes().succeeded(),
                  QStringLiteral("publish failure cancels reservations, payloads, and name claims"));
+
+    auto transactionPublishFailure = std::make_shared<TransactionState>();
+    transactionPublishFailure->publishFails = true;
+    Model::ApplicationRuntime transactionRuntime;
+    Model::GeometryManager transactionManager(transactionRuntime);
+    auto rejectingConstraint = std::make_shared<RejectingRemovalConstraint>();
+    transactionManager.setRemovalConstraint(rejectingConstraint);
+    ImportGeometryOperator transactionFailure(transactionManager,
+                                              registryWithTransaction(transactionPublishFailure));
+    const auto publishFirst = executeSafely(
+        transactionFailure, makeInput(filePath, temporary.path(), QStringLiteral("PublishFirst")), 6);
+    suite.expect(!publishFirst.succeeded() && transactionManager.objectCount() == 0 &&
+                     transactionRuntime.objectCount() == 0 &&
+                     transactionPublishFailure->publishCalls == 1 &&
+                     transactionPublishFailure->rollbackCalls == 1 &&
+                     rejectingConstraint->beginCalls == 0 && publishFirst.error() &&
+                     publishFirst.error()->code == QStringLiteral("TEST-FITK-PUBLISH-FAIL"),
+                 QStringLiteral("FITK publish failure occurs before APPMesh creation and never invokes deletion compensation"));
+
+    auto transactionPublishException = std::make_shared<TransactionState>();
+    transactionPublishException->publishThrows = true;
+    Model::ApplicationRuntime transactionExceptionRuntime;
+    Model::GeometryManager transactionExceptionManager(transactionExceptionRuntime);
+    ImportGeometryOperator transactionException(
+        transactionExceptionManager, registryWithTransaction(transactionPublishException));
+    const auto publishException = executeSafely(
+        transactionException, makeInput(filePath, temporary.path(), QStringLiteral("PublishException")), 61);
+    suite.expect(!publishException.succeeded() && transactionExceptionManager.objectCount() == 0 &&
+                     transactionExceptionRuntime.objectCount() == 0 &&
+                     transactionPublishException->rollbackCalls == 1 && publishException.error() &&
+                     publishException.error()->code == QStringLiteral("GEO-IMPORT-TRANSACTION-PUBLISH-EXCEPTION"),
+                 QStringLiteral("transaction publish exceptions are isolated before APPMesh creation"));
+
+    auto transactionCommitFailure = std::make_shared<TransactionState>();
+    transactionCommitFailure->rollbackFails = true;
+    Model::ApplicationRuntime transactionCommitRuntime(
+        1, [](Model::ObjectId, Model::DataObjectType) {
+            Common::OperationResult result;
+            result.add({QStringLiteral("test"), QStringLiteral("TEST-APPMESH-COMMIT-FAIL"),
+                        QStringLiteral("Controlled APPMesh commit failure."), QString(), false,
+                        {}, QStringLiteral("test.publish"), {}, {}});
+            return result;
+        });
+    Model::GeometryManager transactionCommitManager(transactionCommitRuntime);
+    ImportGeometryOperator transactionCommitFailureOperation(
+        transactionCommitManager, registryWithTransaction(transactionCommitFailure));
+    const auto transactionCommitFailureResult = executeSafely(
+        transactionCommitFailureOperation,
+        makeInput(filePath, temporary.path(), QStringLiteral("CommitFirst")), 7);
+    suite.expect(!transactionCommitFailureResult.succeeded() &&
+                     transactionCommitManager.objectCount() == 0 &&
+                     transactionCommitRuntime.objectCount() == 0 &&
+                     transactionCommitFailure->publishCalls == 1 &&
+                     transactionCommitFailure->rollbackCalls == 1 &&
+                     transactionCommitFailure->finalizeCalls == 0 &&
+                     transactionCommitFailureResult.error() &&
+                     transactionCommitFailureResult.error()->code == QStringLiteral("TEST-APPMESH-COMMIT-FAIL") &&
+                     transactionCommitFailureResult.diagnostics().size() >= 2 &&
+                     transactionCommitFailureResult.diagnostics()[1].code == QStringLiteral("TEST-FITK-ROLLBACK-FAIL"),
+                 QStringLiteral("APPMesh commit failure remains primary while FITK rollback diagnostics append"));
+
+    auto transactionSuccess = std::make_shared<TransactionState>();
+    Model::ApplicationRuntime transactionSuccessRuntime;
+    Model::GeometryManager transactionSuccessManager(transactionSuccessRuntime);
+    ImportGeometryOperator transactionSuccessOperation(
+        transactionSuccessManager, registryWithTransaction(transactionSuccess));
+    const auto transactionSuccessResult = executeSafely(
+        transactionSuccessOperation,
+        makeInput(filePath, temporary.path(), QStringLiteral("Finalized")), 8);
+    suite.expect(transactionSuccessResult.succeeded() && transactionSuccess->publishCalls == 1 &&
+                     transactionSuccess->finalizeCalls == 1 && transactionSuccess->rollbackCalls == 0,
+                 QStringLiteral("successful import finalizes transaction only after APPMesh publication"));
 
     return suite.result();
 }

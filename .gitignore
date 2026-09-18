@@ -1,5 +1,6 @@
 # External dependency bundle (distributed separately; see dependency guide)
 /dependencies/FastCAECodeBase/Tools/
+/Tools/
 
 # CMake and build outputs
 /build/

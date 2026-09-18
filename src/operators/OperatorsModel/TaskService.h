@@ -60,6 +60,8 @@ public:
                                              const Common::Diagnostic& diagnostic);
 
     Common::OperationResult stop(int timeoutMs = 5000);
+    void stopAccepting() noexcept;
+    void drain() noexcept;
     bool isAccepting() const noexcept;
 
 private:

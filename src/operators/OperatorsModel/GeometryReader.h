@@ -23,6 +23,19 @@ struct GeometryReadRequest
 struct GeometryReadResult : Common::OperationResult
 {
     std::optional<Model::GeometryObject> geometry;
+    class Transaction;
+    std::shared_ptr<Transaction> transaction;
+};
+
+class GeometryReadResult::Transaction
+{
+public:
+    virtual ~Transaction() = default;
+    // publish() may fail but does not make the APPMesh GeometryObject visible.
+    virtual Common::OperationResult publish() = 0;
+    // finalize() runs only after GeometryManager has published successfully.
+    virtual void finalize() noexcept = 0;
+    virtual Common::OperationResult rollback() = 0;
 };
 
 class IGeometryReader
@@ -30,6 +43,7 @@ class IGeometryReader
 public:
     virtual ~IGeometryReader() = default;
     virtual QString key() const = 0;
+    virtual QStringList aliases() const { return {key()}; }
     virtual QStringList supportedExtensions() const = 0;
     virtual GeometryReadResult read(const GeometryReadRequest& request) const = 0;
 };

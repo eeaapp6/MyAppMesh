@@ -3,6 +3,8 @@
 #include <QReadLocker>
 #include <QWriteLocker>
 
+#include <set>
+
 namespace AppMesh::OperatorsModel
 {
 namespace
@@ -54,15 +56,29 @@ Common::OperationResult GeometryReaderRegistry::registerReader(
                                     QStringLiteral("Declare at least one supported extension.")));
         return result;
     }
-    QWriteLocker guard(&m_lock);
-    if (m_readers.find(key) != m_readers.end())
+    QStringList keys = reader->aliases();
+    keys.append(reader->key());
+    for (auto& alias : keys)
     {
-        result.add(readerDiagnostic(QStringLiteral("GEO-READER-KEY-DUPLICATE"),
-                                    QStringLiteral("The geometry reader key is already registered."),
-                                    reader->key().trimmed()));
-        return result;
+        alias = normalizedKey(alias);
     }
-    m_readers.emplace(key, std::move(reader));
+    keys.removeAll(QString());
+    keys.removeDuplicates();
+    QWriteLocker guard(&m_lock);
+    for (const auto& alias : keys)
+    {
+        if (m_readers.find(alias) != m_readers.end())
+        {
+            result.add(readerDiagnostic(QStringLiteral("GEO-READER-KEY-DUPLICATE"),
+                                        QStringLiteral("The geometry reader key or alias is already registered."),
+                                        alias));
+            return result;
+        }
+    }
+    for (const auto& alias : keys)
+    {
+        m_readers.emplace(alias, reader);
+    }
     return result;
 }
 
@@ -77,6 +93,11 @@ std::shared_ptr<const IGeometryReader> GeometryReaderRegistry::find(
 int GeometryReaderRegistry::readerCount() const
 {
     QReadLocker guard(&m_lock);
-    return static_cast<int>(m_readers.size());
+    std::set<const IGeometryReader*> unique;
+    for (const auto& entry : m_readers)
+    {
+        unique.insert(entry.second.get());
+    }
+    return static_cast<int>(unique.size());
 }
 }

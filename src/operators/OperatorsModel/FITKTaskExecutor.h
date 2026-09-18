@@ -19,6 +19,7 @@ public:
 
     Common::OperationResult submit(TaskWork work) override;
     Common::OperationResult waitForDone(int timeoutMs) override;
+    void drain() noexcept override;
 
 private:
     std::shared_ptr<FITKTaskExecutorState> m_state;
